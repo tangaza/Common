@@ -45,8 +45,8 @@ sub is_valid_outbound_number {
 
     # US numbers for testing
     # Prepend 1 if missing
-    if ($$number =~ /^1?\d\d\d\d\d\d\d\d\d\d$/) {
-
+    #if ($$number =~ /^1?\d\d\d\d\d\d\d\d\d\d$/) {
+    if ($$number =~ /^1?\d{10}$/) {
 	if ($$number !~ /^1/) {
 	    $$number = '1'.$$number;
 	}
@@ -72,10 +72,11 @@ sub parse_callerid {
     $self->log (4, "parsing callerid $callerid");
 
     # US number
+    # Used multiple \d for clarity. \d{10} format just looks cryptic :)
     if ($callerid =~ /^1(\d\d\d)(\d\d\d\d\d\d\d)$/ || 
-	$callerid =~ /^1-(\d\d\d)-(\d\d\d\d\d\d\d)$/ || 
+	$callerid =~ /^1\-(\d\d\d)\-(\d\d\d\d\d\d\d)$/ || 
 	$callerid =~ /^(\d\d\d)(\d\d\d\d\d\d\d)$/ || 
-	$callerid =~ /^(\d\d\d)-(\d\d\d-\d\d\d\d)$/) {
+	$callerid =~ /^(\d\d\d)\-(\d\d\d\-\d\d\d\d)$/) {
 
 	$self->{user}->{place_id} = 1;
 	$self->{user}->{phone} = $self->{callerid};

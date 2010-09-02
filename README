@@ -1,0 +1,6 @@
+Common
+######
+
+This is a Library for simplifying the creation of asterisk based 
+voice applications. It acts as an extra abstraction layer over
+the AGI module(s)

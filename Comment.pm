@@ -36,11 +36,11 @@ use Nokia::Common::Tools;
 sub leave_comment_menu {
     my ($self) = @_;
 
-    # leave a comment about Mosoko at the beep
+    # leave a comment about the system at the beep
     # press pound when you are finished with your message
 
     #if (&too_many_comments($self)) {
-    #$self->agi->stream_file(&msg($self,'too-many-comments'),"*#","0");
+    #&stream_file ($self,'too-many-comments',"*#","0");
     #return;
     #}
 
@@ -62,8 +62,7 @@ sub leave_comment_menu {
     $self->log (4, "created db record for new comment from user_id ".
 		$self->{user}->{id});
 
-    $self->agi->stream_file
-	([&msg($self,'comment-recorded'),&msg($self,'thank-you')],"*#","0");
+    &stream_file ($self,['comment-recorded', 'thank-you'],"*#","0");
 
 }
 

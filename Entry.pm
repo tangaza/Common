@@ -82,8 +82,7 @@ sub entry {
 		  #    &msg($self, 'your caller id is invalid'),
 		   #   &msg($self, 'goodbye')],"*","0");
 		$self->log (2, "sorry");
-		$self->agi->stream_file
-		    (&msg($self, 'sorry'),"*","0");
+		&stream_file ($self, 'sorry',"*","0");
 		$self->log (2, "done sorry");
 
 		return;
@@ -96,8 +95,7 @@ sub entry {
 		if (! &user_has_hungup($self)) {
 		    $self->log (3, "ending session for user_id ".$self->{user}->{id}.
 			      " callerid ".$self->{callerid});
-		    $self->agi->stream_file
-			(&msg($self, 'goodbye'),"*","0");
+		    &stream_file ($self, 'goodbye', "*","0");
 		    $self->agi->hangup ();
 		}
 		&end_call($self);
@@ -109,9 +107,7 @@ sub entry {
 		# Error occurred.
 		#
 
-		$self->agi->stream_file(
-		    [&msg($self, 'an-error-has-occured'),
-		     &msg($self, 'goodbye')],"*","0");
+		&stream_file ($self, ['an-error-has-occured', 'goodbye'],"*","0");
 	    }
 
         #};
@@ -188,7 +184,6 @@ sub set_alarms {
     # mention of alarms here
     # http://www.voip-info.org/wiki-Asterisk+cmd+monitor
 
-    # More code in Mosoko/Entry set_alarms
 
 }
 
@@ -240,9 +235,7 @@ sub check_for_invitation {
 	$self->{newuser} = 1;
 
 	my $friends_name_file = &get_users_name ($self,$friend_user_id);
-	$self->agi->stream_file
-	    ([&msg($self,'welcome-to-mosoko'),
-	      &msg($self,'You were invited'),$friends_name_file], "*#", "0");
+	&stream_file ($self, ['welcome-to-socnet', 'You were invited', $friends_name_file], "*#", "0");
 	$self->{played_intro} = 1;
 
 	$self->{server}{told_user_invitation_sth} =
