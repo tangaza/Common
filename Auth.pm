@@ -89,12 +89,12 @@ sub auth_pin {
 		$self->log (4, 'pin walk thru');
 		return 'ok';
 	    }
-	    &stream_file ($self, 'sorry-that-pin-was-not-correct',"*#","0"),
+	    $self->agi->stream_file (&msg($self,'sorry-that-pin-was-not-correct'),"*#","0"),
 
 	}
 
 	# May need to give user a person to talk to to reset pin.
-	&stream_file ($self, 'sorry-we-could-not-authenticate-your-pin', "#", "0"),
+	$self->agi->stream_file (&msg($self,'sorry-we-could-not-authenticate-your-pin'),"#","0"),
 	#&request_attendant ($self);
 	return 'cancel';
 
@@ -117,7 +117,8 @@ sub set_pin {
     my $MAX_CHANCES = 3;
     my $entered_pin = -1;
 
-    &stream_file ($self, 'pin-creation-menu', "#", "0");
+    $self->agi->stream_file
+	(&msg($self,'pin-creation-menu'),"#","0");
 
     for ( my $tries = 0; $tries < $MAX_CHANCES && $entered_pin == -1; $tries++ ) {
 
@@ -134,15 +135,16 @@ sub set_pin {
 
 	# ah perl counting
 	if ($#number_list != 3) {
-	    &stream_file ($self,'sorry-that-was-not-the-right-number-of-digits',"#","0"),
+	    $self->agi->stream_file
+		(&msg($self,'sorry-that-was-not-the-right-number-of-digits'),"#","0"),
 		$entered_pin = -1;
 	} else {
-	    
+
 	    my $confirm_pin = &get_unchecked_large_number
 		($self, &msg($self,'please-reenter-your-new-pin-for-confirmation'), \@number_list);
-	    
+
 	    $self->log (4, "confirm_pin $confirm_pin");
-	    
+
 	    if ($confirm_pin eq 'timeout' || $confirm_pin eq 'cancel' || $confirm_pin eq 'hangup') {
 		return $confirm_pin;
 	    }
@@ -150,7 +152,8 @@ sub set_pin {
 	    if ($entered_pin != $confirm_pin) {
 		$entered_pin = -1;
 		$self->log (4, "pins did not match");
-		&stream_file ($self,'sorry-the-pins-you-entered-did-not-match-please-try-again',"#","0");
+		$self->agi->stream_file
+		    (&msg($self,'sorry-the-pins-you-entered-did-not-match-please-try-again'),"#","0");
 	    } else {
 		$self->log (4, "pins matched, entered_pin=$entered_pin");
 	    }
@@ -174,7 +177,7 @@ sub set_pin {
 	$self->{server}{set_pin_sth}->execute($entered_pin, $self->{user}->{id});
 	$self->{server}{set_pin_sth}->finish();
 
-	&stream_file ($self,'your-pin-is-now-set', "#", "0");
+	$self->agi->stream_file (&msg($self,'your-pin-is-now-set'),,"#","0");
 	
 	$self->{user}->{pin} = $entered_pin;
 	

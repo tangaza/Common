@@ -27,6 +27,7 @@ use Exporter;
 use Digest::MD5 qw(md5_hex);
 use File::Basename;
 use strict;
+use warnings;
 
 ######################################################################
 # TODO As messages get solidified and recorded properly, put them in here.
@@ -44,34 +45,18 @@ sub init_sound {
     my $self = shift;
 
 
-
+    my $rs = $self->{server}{schema}->resultset('Languages');
     
-    $self->{server}{select_languages_sth} =
-	$self->{server}{dbi}->prepare_cached
-	("select language_id, name from languages");
-    $self->{server}{select_languages_sth}->execute ();
-
-
-    my $languages = $self->{server}{select_languages_sth}->
-	fetchall_arrayref
-	({ language_id => 1, name => 1});
-
-    for (my $l = 0; $l <= $#$languages; $l++) {
-	$language_id2name{$languages->[$l]->{language_id}} =
-	    $languages->[$l]->{name};
-
-	#print STDERR "id $languages->[$l]->{language_id}\n";
-	#print STDERR "name $languages->[$l]->{name}\n";
-
+    while (my $language = $rs->next) {
+        $language_id2name{$language->language_id} = $language->name;
     }
-
-    $self->{server}{select_languages_sth}->finish ();
-
+    
     &init_sound_files ($self);
 }
 
 sub get_language_name {
-    my ($language_id) = @_;
+    my ($self, $language_id) = @_;
+    
     if (defined ($language_id2name{$language_id})) {
 	return $language_id2name{$language_id};
     }

@@ -122,7 +122,7 @@ sub callback {
 sub configure_hook {
     my $self = shift;
     #print STDERR "Running configure hook\n";
-    &db_connect ($self);
+    &dbi_connect ($self);
     &init_tools ($self);
     &init_sound ($self);
 }

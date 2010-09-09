@@ -60,7 +60,7 @@ sub entry {
     
     $self->log (3, "starting ".&get_channel_desc($self));
 
-    &db_connect ($self);
+    #&db_connect ($self);
 
     $self->{stamp} = time;
     $self->{callerid} = $self->input('callerid');
@@ -82,7 +82,8 @@ sub entry {
 		  #    &msg($self, 'your caller id is invalid'),
 		   #   &msg($self, 'goodbye')],"*","0");
 		$self->log (2, "sorry");
-		&stream_file ($self, 'sorry',"*","0");
+		$self->agi->stream_file
+		    (&msg($self, 'sorry'),"*","0");
 		$self->log (2, "done sorry");
 
 		return;
@@ -95,7 +96,8 @@ sub entry {
 		if (! &user_has_hungup($self)) {
 		    $self->log (3, "ending session for user_id ".$self->{user}->{id}.
 			      " callerid ".$self->{callerid});
-		    &stream_file ($self, 'goodbye', "*","0");
+		    $self->agi->stream_file
+			(&msg($self, 'goodbye'),"*","0");
 		    $self->agi->hangup ();
 		}
 		&end_call($self);
@@ -107,7 +109,9 @@ sub entry {
 		# Error occurred.
 		#
 
-		&stream_file ($self, ['an-error-has-occured', 'goodbye'],"*","0");
+		$self->agi->stream_file(
+		    [&msg($self, 'an-error-has-occured'),
+		     &msg($self, 'goodbye')],"*","0");
 	    }
 
         #};
@@ -184,6 +188,7 @@ sub set_alarms {
     # mention of alarms here
     # http://www.voip-info.org/wiki-Asterisk+cmd+monitor
 
+    # More code in Mosoko/Entry set_alarms
 
 }
 
@@ -195,13 +200,10 @@ sub end_call {
     my $endTime = time;
     my $seconds = $endTime - $self->{stamp};
 
-    $self->{server}{call_insert_sth} =
-	$self->{server}{dbi}->prepare_cached
-	("INSERT INTO calls (call_id, user_id, timestamp, seconds, cbstate) ".
-	 "VALUES (NULL, ?, NULL, ?, ?)");
-    $self->{server}{call_insert_sth}->execute
-	($self->{user}->{id}, $seconds, $self->{cbstate});
-
+    my $call = $self->{server}{schema}->resultset('Calls')->create
+	({user_id => $self->{user}->{id}, seconds => $seconds, 
+	  cbstate => $self->{cbstate}});
+    
     $self->{fn_end_call}->($self);
 
     $self->log (4, "end_call user ".$self->{user}->{id}." sec ".$seconds);
@@ -235,7 +237,9 @@ sub check_for_invitation {
 	$self->{newuser} = 1;
 
 	my $friends_name_file = &get_users_name ($self,$friend_user_id);
-	&stream_file ($self, ['welcome-to-socnet', 'You were invited', $friends_name_file], "*#", "0");
+	$self->agi->stream_file
+	    ([&msg($self,'welcome-to-mosoko'),
+	      &msg($self,'You were invited'),$friends_name_file], "*#", "0");
 	$self->{played_intro} = 1;
 
 	$self->{server}{told_user_invitation_sth} =
@@ -263,7 +267,7 @@ sub configure_hook {
 
     #print STDERR "conf hook";
 
-    &db_connect ($self);
+    &dbi_connect ($self);
     &init_sound ($self);
     #&init_places ($self);
     &init_tools ($self);

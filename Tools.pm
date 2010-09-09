@@ -21,7 +21,7 @@
 package Nokia::Common::Tools;
 use Exporter;
 @ISA = ('Exporter');
-@EXPORT = ('get_max_results_to_listen_to', 'walk_query_results','dtmf_dispatch_static','dtmf_dispatch_dynamic', 'write_pid','reap_old_self','stream_file', 'say_number', 'get_channel_desc','db_connect','user_has_hungup','get_hash_file','get_seconds_remaining_count','db_disconnect', 'place_call', 'codec', 'get_large_number', 'get_unchecked_large_number', 'get_unchecked_small_number', 'get_yes_no_option', 'get_dtmf_input','get_small_number','mv_tmp_to_comment_dir', 'mv_tmp_to_post_dir', 'mv_tmp_to_names_dir','mv_tmp_to_status_dir', 'mv_tmp_to_dir', 'record_file', 'get_max_uint','request_attendant', 'speech_or_dtmf_input', 'init_user', 'create_user', 'get_user_id', 'get_user_name','set_user_name', 'play_random', 'dtmf_quick_jump', 'init_tools', 'get_callcount', 'rnd_alphanum', 'sms_enqueue', 'unlink_file', 'unlink_tmp_file', 'check_end_network_modify_menu', 'get_network_of_friendship', 'select_network_menu', 'set_nickname_file', 'get_nickname_file');
+@EXPORT = ('get_max_results_to_listen_to', 'walk_query_results','dtmf_dispatch_static','dtmf_dispatch_dynamic', 'write_pid','reap_old_self','stream_file', 'say_number', 'get_channel_desc','db_connect','user_has_hungup','get_hash_file','get_seconds_remaining_count','db_disconnect', 'place_call', 'codec', 'get_large_number', 'get_unchecked_large_number', 'get_unchecked_small_number', 'get_yes_no_option', 'get_dtmf_input','get_small_number','mv_tmp_to_comment_dir', 'mv_tmp_to_post_dir', 'mv_tmp_to_names_dir','mv_tmp_to_status_dir', 'mv_tmp_to_dir', 'record_file', 'get_max_uint','request_attendant', 'speech_or_dtmf_input', 'init_user', 'create_user', 'get_user_id', 'get_user_name','set_user_name', 'play_random', 'dtmf_quick_jump', 'init_tools', 'get_callcount', 'rnd_alphanum', 'sms_enqueue', 'unlink_file', 'unlink_tmp_file', 'check_end_network_modify_menu', 'get_network_of_friendship', 'select_network_menu', 'set_nickname_file', 'get_nickname_file', 'dbi_connect');
 
 
 use strict;
@@ -36,6 +36,7 @@ use Math::Random qw(random_uniform_integer);
 use LWP;
 use URI;
 use LWP::UserAgent;
+use UNIVERSAL::require;
 
 ######################################################################
 
@@ -1323,6 +1324,30 @@ sub db_connect {
 }
 
 ######################################################################
+sub dbi_connect {
+    my ($self) = @_;
+    $self->{app} = $self->get_property('app_name');
+    
+
+    my $schema_package = "Nokia::".$self->{app}."::Schema";
+    
+    $schema_package->use or die $@;
+    
+    $self->{server}{schema} = $schema_package->connect
+        ($self->get_property('dsn'),
+         $self->get_property('db_user'),
+         $self->get_property('db_pw')
+	 );
+    
+    $self->{server}{schema}->storage->debug(1);
+    $self->log (2, "Connecting to database ".$self->get_property('dsn'));
+    
+    if (!defined ($self->{server}{schema})) {
+        die ("Could not connect to database ".$self->get_property('DB_DSN'));
+    }
+}
+
+######################################################################
 
 sub db_disconnect {
     my $self = shift;
@@ -1435,42 +1460,30 @@ sub init_user {
     if ($res < 0) {
 	return $res;
     }
-
-    while ($self->{user}->{id} == 0) {
-	$self->{server}{get_user_sth} = $self->{server}{dbi}->prepare_cached
-	("SELECT users.user_id,status,place_id,phone_number phone,user_pin,callback_limit,".
-	 "language_id ".
-	 "FROM users ".
-	 "INNER JOIN user_phones on users.user_id  = user_phones.user_id WHERE phone_number = ?");
-
-	$self->{server}{get_user_sth}->execute
-	    ($self->{user}->{phone});
-
-	if ($self->{server}{get_user_sth}->rows > 0) {
-	    my $user_info =
-		$self->{server}{get_user_sth}->fetchrow_arrayref();
-	    $self->{user}->{id} = $user_info->[0];
-	    $self->{user}->{status} = $user_info->[1];
-	    $self->{user}->{place_id} = $user_info->[2];
-	    $self->{user}->{phone} = $user_info->[3];
-	    $self->{user}->{pin} = $user_info->[4];
-	    $self->{user}->{callback_limit} = $user_info->[5];
-	    $self->{user}->{language_id} = $user_info->[6];
-
-	    $self->log (3, "init_user found user ".$self->{user}->{id}.
-		      " callerid ".$self->{user}->{phone});
-
-	} else {
-
-	    my %user_desc = ();
-	    $user_desc{phone} = $self->{user}->{phone};
-	    my $new_user_id = &create_user ($self, \%user_desc);
-
-	    $self->{newuser} = 1;
-
-	}
-	$self->{server}{get_user_sth}->finish();
+    
+    my $rs = $self->{server}{schema}->resultset('Users')->search
+	({'phone_number' => $self->{user}->{phone}}, 
+	 {select => [qw/user_id status place_id user_pin callback_limit language_id/ ]},
+	 {join => ['user_phones']}
+	 );
+    
+    if (my $user = $rs->next) {
+	$self->{user}->{id} = $user->user_id;
+	$self->{user}->{status} = $user->status;
+	$self->{user}->{place_id} = $user->place_id;
+	#$self->{user}->{phone} = $user->phone_number;
+	$self->{user}->{pin} = $user->user_pin;
+	$self->{user}->{callback_limit} = $user->callback_limit;
+	$self->{user}->{language_id} = $user->language_id->language_id;
     }
+    else {
+	my %user_desc = ();
+	$user_desc{phone} = $self->{user}->{phone};
+	my $new_user_id = &create_user ($self, \%user_desc);
+
+	$self->{newuser} = 1;
+    }
+
 
     if ($self->{newuser} == 0) {
 	$self->{callcount} = &get_callcount ($self, $self->{user}->{id});
@@ -1489,7 +1502,7 @@ sub init_user {
     $self->log (3, "init_user using language model ".$self->{language_model});
 
     $self->{user}->{language} =
-	&get_language_name ($self->{user}->{language_id});
+	&get_language_name ($self, $self->{user}->{language_id});
     
     #Set(CHANNEL(language)=hu) 
 
@@ -1517,78 +1530,37 @@ sub create_user {
     $self->log (3, "place_id ".$desc->{place_id}.
 	      " phone ".$desc->{phone}.
 	      " language_id ".$desc->{language_id});
-
-    $self->{server}{user_insert_sth} =
-	$self->{server}{dbi}->prepare_cached
-	("INSERT INTO users (place_id, ".
-	 "language_id, create_stamp) ".
-	 "VALUES ".
-	 "(?, ?, NULL)");
-    $self->{server}{user_insert_sth}->execute 
-	($desc->{place_id},
-	 $desc->{language_id});
-
-    my $new_user_id = $self->{server}{user_insert_sth}->{mysql_insertid};
-
-    $self->{server}{user_insert_sth}->finish();
+   
     
-    $self->{server}{user_insert_phone_sth} =
-        $self->{server}{dbi}->prepare_cached
-	("INSERT INTO user_phones (country_id, phone_number, user_id, is_primary) ".
-	 "VALUES ".
-	 "(1, ?, ?, 'yes');");
-    $self->{server}{user_insert_phone_sth}->execute($desc->{phone}, $new_user_id);
-    $self->{server}{user_insert_phone_sth}->finish();
-
-    #group mine
-    $self->{server}{group_insert_sth} =
-	$self->{server}{dbi}->prepare_cached
-	("INSERT INTO groups (group_name, group_type, is_active) ".
-	 "VALUES (?, 'mine', 'yes')");
-    $self->{server}{group_insert_sth}->execute($desc->{phone});
-    my $group_id = $self->{server}{group_insert_sth}->{mysql_insertid};
-    $self->{server}{group_insert_sth}->finish();
+    #creating user record
+    my $user_rs = $self->{server}{schema}->resultset('Users');
+    my $new_user = $user_rs->create
+	({place_id => $desc->{place_id}, language_id => $desc->{language_id},
+	  create_stamp => undef, 
+	  user_phones => [{
+	      country_id => 1, phone_number => $desc->{phone},
+	      is_primary => 'yes'}],
+      });
     
-    #user group
-    $self->{server}{user_group_insert_sth} =
-	$self->{server}{dbi}->prepare_cached
-	("INSERT INTO user_groups (user_id, group_id, slot, is_quiet) ".
-	 "VALUES (?, ?, 1, 'no')");
-    $self->{server}{user_group_insert_sth}->execute($new_user_id, $group_id);
-    $self->{server}{user_group_insert_sth}->finish();
-    
-    #user group hist
     my $action = &get_action($self, "joined group");
-    $self->{server}{user_group_hist_insert_sth} =
-	$self->{server}{dbi}->prepare_cached
-	("INSERT INTO user_group_history (group_id, action_id, user_id) ".
-	 "VALUES (?, ?, ?)");
-    $self->{server}{user_group_hist_insert_sth}->execute 
-	($group_id, $action, $new_user_id);
-    $self->{server}{user_group_hist_insert_sth}->finish();
     
-    #group admin
-    $self->{server}{group_admin_insert_sth} =
-	$self->{server}{dbi}->prepare_cached
-	("INSERT INTO group_admin (user_id, group_id) ".
-	 "VALUES (?, ?)");
-    $self->{server}{group_admin_insert_sth}->execute 
-	($new_user_id, $group_id);
-    $self->{server}{group_admin_insert_sth}->finish();
+    my $group_rs = $self->{server}{schema}->resultset('Groups');
+    my $new_group = $group_rs->find_or_create
+        (
+         {group_name => $desc->{phone}, group_type => 'mine', is_active => 'yes',
+          user_groups => [{
+	      user_id => $new_user->id, slot => 1, is_quiet => 'no'}],
+          user_group_histories => [{
+              user_id => $new_user->id, action_id => $action }],
+          group_admins => [{
+              user_id=> $new_user->id}],
+	  admin_group_histories => [{
+	      user_src_id => $new_user->id, user_dst_id => $new_user->id, action_id => $action }]
+      });
     
-    #admin group hist
-    $action = &get_action($self, "created group");
-    $self->{server}{admin_group_insert_sth} =
-	$self->{server}{dbi}->prepare_cached
-	("INSERT INTO admin_group_history (group_id, action_id, user_src_id, user_dst_id) ".
-	 "VALUES (?, ?, ?, ?)");
-    $self->{server}{admin_group_insert_sth}->execute
-	($group_id, $action, $new_user_id, $new_user_id);
-    $self->{server}{admin_group_insert_sth}->finish();
-    
-    $self->log (3, "end create_user new_user_id $new_user_id");
+    $self->log (3, "end create_user new_user_id ". $new_user->id);
 
-    return $new_user_id;
+    return $new_user->id;
     
 }
 
@@ -1596,34 +1568,22 @@ sub create_user {
 sub get_action {
     my ($self, $action) = @_;
     
-    $self->{server}{get_action_sth} =
-	$self->{server}{dbi}->prepare_cached
-	("Select action_id from actions WHERE action_desc = ?");
-    $self->{server}{get_action_sth}->execute($action);
-    my $action_id = $self->{server}{get_action_sth}->fetchrow_arrayref()->[0];
-    $self->{server}{get_action_sth}->finish();
+    my $action_val = $self->{server}{schema}->resultset("Actions")->find({action_desc => $action});
     
-    $self->log(4, "Action: desc=$action, id=$action_id");
     
-    return $action_id;
+    $self->log(4, "Action: desc=".$action_val->action_desc.", id=".$action_val->action_id);
+    
+    return $action_val->action_id;
 }
 
 ######################################################################
 sub get_callcount {
     my ($self, $user_id) = @_;
 
-    $self->{server}{get_callcount_sth} =
-	$self->{server}{dbi}->prepare_cached
-	("SELECT count(*) as callcount from calls where user_id=?");
-
-    $self->{server}{get_callcount_sth}->execute
-	($user_id);
-
-    my ($callcount) = 
-	$self->{server}{get_callcount_sth}->fetchrow_array();
-    $self->{server}{get_callcount_sth}->finish();
-
-    return $callcount;
+    my $call_rs = $self->{server}{schema}->resultset('Calls')->search
+	(user_id => $user_id);
+    
+    return $call_rs->count;
 
 }
 
@@ -1631,6 +1591,7 @@ sub get_callcount {
 #
 sub get_user_id {
     my ($self, $phone) = @_;
+    
     $self->{server}{get_user_id_sth} =
 	$self->{server}{dbi}->prepare_cached
 	("SELECT user_id FROM users WHERE phone = ?");
@@ -1649,23 +1610,18 @@ sub get_user_id {
 #
 sub get_user_name {
     my ($self, $user_id) = @_;
-
+    
+    my $user = $self->{server}{schema}->resultset('Users')->find
+	($user_id, {select => [qw/name_file/]});
+    
     $self->log (4, "get_users_name start user_id $user_id");
-
-    $self->{server}{get_users_name_sth} =
-	$self->{server}{dbi}->prepare_cached
-	("SELECT name_file FROM users WHERE user_id = ?");
-
-    $self->{server}{get_users_name_sth}->execute ($user_id);
-    my $name_file = $self->{server}{get_users_name_sth}->fetchrow_arrayref()->[0];
-    $self->{server}{get_users_name_sth}->finish ();
-
-    if (!defined($name_file)) {
-	$self->log (4, "get_users_name end user_id $user_id name_file null");
+    
+    if (!defined($user->name_file)) {
+	$self->log (4, "get_user_name end user_id $user_id name_file null");
 	return undef;
     }
 
-    $name_file = $names_dir.$name_file;
+    my $name_file = $names_dir.$user->name_file;
     $self->log (4, "get_users_name end user_id $user_id name_file $name_file");
     return $name_file;
 }
@@ -1680,12 +1636,10 @@ sub set_user_name {
     if ($name_file eq 'timeout') { return 'timeout'; }
 
     $name_file = &mv_tmp_to_names_dir ($self, $name_file);
-    $self->{server}{set_users_name_sth} =
-	$self->{server}{dbi}->prepare_cached
-	("UPDATE users SET name_file = ? WHERE user_id = ?");
-    $self->{server}{set_users_name_sth}->execute ($name_file, $user_id);
-    $self->{server}{set_users_name_sth}->finish ();
-
+    
+    my $user_rs = $self->{server}{schema}->resultset('Users')->find($user_id);
+    $user_rs->update({name_file => $name_file});
+    
     return $name_file;
 
 }
@@ -1801,99 +1755,19 @@ sub select_network_menu {
     $self->log (4, "end select_network_menu");
 
     #return the group_id based on the selected slot
-    $self->{server}{get_group_sth} =
-	$self->{server}{dbi}->prepare_cached
-	("SELECT group_id FROM user_groups ".
-	 "WHERE user_id = ? AND slot = ?");
-    $self->log (4, "SELECT group_id FROM user_groups ".
-		"WHERE user_id = $self->{user}->{id} AND slot = $network_code");
-    $self->{server}{get_group_sth}->execute($self->{user}->{id}, $network_code);
-    my $group = $self->{server}{get_group_sth}->fetchrow_arrayref();
+    my $group_rs = $self->{server}{schema}->resultset('UserGroups')->search
+	(user_id => $self->{user}->{id}, slot => $network_code,
+	 {select => [qw/group_id/]});
     
-    $self->{server}{get_group_sth}->finish();
+    my $grp = $group_rs->next;
+    my $group_id = $grp->group_id->group_id if (defined($grp));
+#    if ($grp) {
+#	$group_id = $grp->group_id->group_id;
+#    }
+    $self->log(4, "Selected group: ".$group_id);
+    return $group_id;
+    #return (defined($grp)) ? $group = $group_rs->next : $group_rs;
     
-    return (defined($group)) ? $group = $group->[0] : $group;
-    
-	
-    die ("Should not be reached");
-
-}
-
-######################################################################
-sub set_nickname_file {
-  my ($self, $src_user_id, $dst_user_id, $filename) = @_;
-
-
-
-  # mv file from tmp to right dir
-  $filename = &mv_tmp_to_dir ($self, $filename, $nicknames_dir, 0);
-
-  if (defined (&get_nickname_file ($self, $src_user_id, $dst_user_id))) {
-    # update
-
-    $self->{server}{update_nickname_file_sth} =
-      $self->{server}{dbi}->prepare_cached
-	("UPDATE nicknames SET filename = ? , text = NULL ".
-	 "WHERE src_user_id = ? AND dst_user_id = ?");
-    $self->{server}{update_nickname_file_sth}->execute
-      ($filename, $src_user_id, $dst_user_id);
-    $self->{server}{update_nickname_file_sth}->finish();
-
-
-  } else {
-    # insert
-
-    $self->{server}{insert_nickname_file_sth} =
-      $self->{server}{dbi}->prepare_cached
-	("INSERT INTO nicknames (src_user_id, dst_user_id, filename) ".
-	 " VALUES (?, ?, ?)");
-    $self->{server}{insert_nickname_file_sth}->execute
-      ($src_user_id, $dst_user_id, $filename);
-    $self->{server}{insert_nickname_file_sth}->finish();
-
-  }
-
-  # clear the cache
-  my $nickname_pair = 'nickname-'.$src_user_id.'-'.$dst_user_id;
-  $self->{$nickname_pair} = undef;
-
-  return $filename;
-
-}
-
-######################################################################
-# Deprecated
-sub get_nickname_file {
-  my ($self, $src_user_id, $dst_user_id) = @_;
-
-  $self->log (4, "src $src_user_id dst $dst_user_id");
-
-  # cache nicknames for future reference
-  my $nickname_pair = 'nickname-'.$src_user_id.'-'.$dst_user_id;
-
-  if (!defined($self->{$nickname_pair})) {
-
-      $self->{server}{get_nickname_file_sth} =
-	  $self->{server}{dbi}->prepare_cached
-	  ("SELECT filename from nicknames where src_user_id=?".
-	   " AND dst_user_id=?");
-      $self->{server}{get_nickname_file_sth}->execute
-	  ($src_user_id, $dst_user_id);
-
-      my $nickname_file = undef;
-      if ($self->{server}{get_nickname_file_sth}->rows > 0) {
-	  $nickname_file = 
-	      $self->{server}{get_nickname_file_sth}->fetchrow_arrayref()->[0];
-	  # resolve to full path
-	  $nickname_file = $nicknames_dir.$nickname_file;
-      }
-      $self->{server}{get_nickname_file_sth}->finish();
-
-      $self->{$nickname_pair} = $nickname_file;
-
-  }
-
-  return $self->{$nickname_pair};
 }
 
 ######################################################################
