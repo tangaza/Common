@@ -21,7 +21,7 @@
 package Nokia::Common::Tools;
 use Exporter;
 @ISA = ('Exporter');
-@EXPORT = ('get_max_results_to_listen_to', 'walk_query_results','dtmf_dispatch_static','dtmf_dispatch_dynamic', 'write_pid','reap_old_self','stream_file', 'say_number', 'get_channel_desc','db_connect','user_has_hungup','get_hash_file','get_seconds_remaining_count','db_disconnect', 'place_call', 'codec', 'get_large_number', 'get_unchecked_large_number', 'get_unchecked_small_number', 'get_yes_no_option', 'get_dtmf_input','get_small_number','mv_tmp_to_comment_dir', 'mv_tmp_to_post_dir', 'mv_tmp_to_names_dir','mv_tmp_to_status_dir', 'mv_tmp_to_dir', 'record_file', 'get_max_uint','request_attendant', 'speech_or_dtmf_input', 'init_user', 'create_user', 'get_user_id', 'get_user_name','set_user_name', 'play_random', 'dtmf_quick_jump', 'init_tools', 'get_callcount', 'rnd_alphanum', 'sms_enqueue', 'unlink_file', 'unlink_tmp_file', 'check_end_network_modify_menu', 'get_network_of_friendship', 'select_network_menu', 'set_nickname_file', 'get_nickname_file', 'dbi_connect');
+@EXPORT = ('get_max_results_to_listen_to', 'walk_query_results','dtmf_dispatch_static','dtmf_dispatch_dynamic', 'write_pid','reap_old_self','stream_file', 'say_number', 'get_channel_desc','user_has_hungup','get_hash_file','get_seconds_remaining_count','db_disconnect', 'place_call', 'codec', 'get_large_number', 'get_unchecked_large_number', 'get_unchecked_small_number', 'get_yes_no_option', 'get_dtmf_input','get_small_number','mv_tmp_to_comment_dir', 'mv_tmp_to_post_dir', 'mv_tmp_to_names_dir','mv_tmp_to_status_dir', 'mv_tmp_to_dir', 'record_file', 'get_max_uint','request_attendant', 'speech_or_dtmf_input', 'init_user', 'create_user', 'get_user_id', 'get_user_name','set_user_name', 'play_random', 'dtmf_quick_jump', 'init_tools', 'get_callcount', 'rnd_alphanum', 'sms_enqueue', 'unlink_file', 'unlink_tmp_file', 'set_nickname_file', 'get_nickname_file', 'dbi_connect');
 
 
 use strict;
@@ -101,7 +101,6 @@ sub play_random {
 	sprintf ("$random_key-%02d", 
 		 Math::Random::random_uniform_integer (1, 1, $MAX_RANDOM_MSGS));
 
-    #$self->log (4, "r $random_msg");
 
     my $dtmf = $self->agi->stream_file([&msg($self,$random_msg),$msg], "*#", "0");
     return $dtmf;
@@ -113,7 +112,6 @@ sub play_random {
 
 sub dtmf_quick_jump {
     my ($self, $jump_fn, $prompt) = @_;
-
 
     $self->log(4, "First Jump");
 
@@ -141,7 +139,7 @@ sub dtmf_dispatch_static {
     }
 }
 
-
+######################################################################
 sub dtmf_dispatch {
     my ($self, $words, $dispatch, $digits) = @_;
 
@@ -161,6 +159,7 @@ sub dtmf_dispatch {
 	    push (@prompt_list, $prompts[$p]);
 	    #print STDERR ("prompt_list gets ".$prompt->[$p]."\n");
 	}
+	
 	$last_prompt = $prompts[$p];
 	print STDERR ("last prompt is ".$prompts[$p]."\n");
     }
@@ -182,8 +181,7 @@ sub dtmf_dispatch {
 	    ($words->{'pre'}, "$digits", "0");
     }
 
-    for (my $i = 0; $i < $max_prompts && defined($dtmf)
-	 && $dtmf == 0; $i++) {
+    for (my $i = 0; $i < $max_prompts && defined($dtmf) && $dtmf == 0; $i++) {
 
 	if (&user_has_hungup($self)) { return 'hangup'; }
 
@@ -238,7 +236,6 @@ sub dtmf_dispatch {
 	#$self->log (3, "yes: jump to fn");
 	my $function = $dispatch->{$input};
 
-
 	my $ret = $function->($self);
 
 	if (!defined($ret)) {
@@ -277,7 +274,6 @@ sub dtmf_dispatch_dynamic {
 	my $dispatch = \%dispatch_hash;
 
 	&$dynamic_prompt_fn ($self, $words, $dispatch, \$digits);
-
 
 	my $ret = &dtmf_dispatch ($self, $words, $dispatch, $digits);
 	$self->log (4, "dtmf_dispatch ret $ret");
@@ -527,7 +523,7 @@ sub get_and_check_number {
 
 	    for (my $j = 0; $j < $MAX_DTMF_PROMPTS && $input ne '2'; $j++) {
 
-		my $dtmf = $self->agi->stream_file(&msg($self,'you-entered'), "$digits", "0");
+		my $dtmf = &stream_file($self,'you-entered', "$digits", "0");
 
 		if (defined($dtmf)) {
 		    $self->log (4, "after you_entered dtmf $dtmf");
@@ -539,9 +535,7 @@ sub get_and_check_number {
 
 		    #my @number_as_array = ();
 		    for (my $n = 0; $n <= $#number_list && $dtmf == 0; $n++) {
-			$dtmf = $self->agi->stream_file
-			    (&msg($self,"digits/$number_list[$n]"),
-			    "$digits", "0");
+			$dtmf = &stream_file ($self,"digits/$number_list[$n]", "$digits", "0");
 
 			$self->log (4, "saying number $n dtmf $dtmf");
 		    }
@@ -601,7 +595,7 @@ sub get_dtmf_input {
 
     $self->log (4, "starting get_dtmf_number");
 
-    die if (!defined($prompt));
+    die ("No prompts defined") if (!defined($prompt));
 
     my $dtmf = 0;
     my $input = -1;
@@ -765,141 +759,6 @@ sub get_max_results_to_listen_to {
 }
 
 ######################################################################
-
-sub walk_query_results {
-    my ($self) = @_;
-
-    my $dtmf = 0;
-    if ($self->{server}{query_sth}->rows <= 0) {
-	$dtmf = $self->agi->stream_file
-	    (&msg($self,"sorry-nothing-matches"),"*#","0");
-    } elsif ($self->{server}{query_sth}->rows > $MAX_RESULTS_TO_LISTEN_TO) {
-	$dtmf = $self->agi->stream_file
-	    (&msg($self,"sorry-there-are-too-many-results-for-your-search-please-go-back-and-add-some-criteria"),"*#","0");
-    } else {
-	my $tuples = $self->{server}{query_sth}->
-	    fetchall_arrayref({ post_id => 1, title_file => 1,
-				desc_file => 1, contact_file => 1});
-
-
-	$dtmf = $self->agi->stream_file(&msg($self,'walk-query-results-long'),"*#","0");	
-
-	my $digits = "9743160*#";
-	my $posts_dir = '/data/posts/';
-	my $done = 0;
-
-	for (my $t = 0; $t <= $#$tuples; $t++) {
-	    if (defined($tuples->[$t])) {
-		print STDERR "t $t is defined\n";
-	    }
-	}
-
-	for (my $t = 0; $t <= $#$tuples && !$done &&
-	     defined($dtmf) && $dtmf >= 0; $t++) {
-	    my $tuple = $tuples->[$t];
-
-	    print STDERR "tuple $tuple->{post_id}\n";
-
-	    $dtmf = $self->agi->get_option
-		($posts_dir.$tuple->{title_file},"$digits", 2500);
-
-	    while (defined($dtmf) && $dtmf > 0 && !$done) {
-
-		my $input = chr ($dtmf);
-		$dtmf = 0;
-
-		if ($input eq '9') {
-
-		    # Play the user more detail
-		    # If he doesn't do anything, continue on to the next entry
-
-		    $dtmf = $self->agi->stream_file
-			([&msg($self,'beep'),$posts_dir.$tuple->{desc_file},
-			  &msg($self,'beep')], "$digits", "0");
-
-		    if (defined($dtmf) && $dtmf == 0) {
-
-			$dtmf = $self->agi->get_option
-			    ($posts_dir.$tuple->{contact_file},"$digits", 2500);
-		    }
-
-		} elsif ($input eq '7') {
-
-		    # User is NOT interested in this one
-
-		    if (!defined($self->{query}->{rejected})) {
-			my %rejected_hash = ();
-			$self->{query}->{rejected} = \%rejected_hash;
-		    }
-		    my $rejected = $self->{query}->{rejected};
-		    $rejected->{$tuple->{post_id}} = 1;
-		    &tell_user_message ($self, &msg($self,'rejecting-this-posting'));
-
-		} elsif ($input eq '#') {
-
-		    # User IS interested in this one
-
-		    if (!defined($self->{query}->{saved})) {
-			my %saved_hash = ();
-			$self->{query}->{saved} = \%saved_hash;
-		    }
-		    my $saved = $self->{query}->{saved};
-		    $saved->{$tuple->{post_id}} = 1;
-		    &tell_user_message ($self, &msg($self,'saving-this-posting'));
-
-		} elsif ($input eq '4') {
-
-		    # repeat the posting
-		    $t--;
-		    if ($t < 0) { $t = 0; }
-		    &tell_user_message ($self, &msg($self,'repeat'));
-
-		} elsif ($input eq '3') {
-
-		    # skip ahead to the next posting
-
-		    # do nothing
-
-		    &tell_user_message ($self, &msg($self,'skip'));
-
-
-
-		} elsif ($input eq '1') {
-
-		    # jump backward
-
-		    $t-=2;
-		    if ($t < 0) { $t = 0; }
-
-		    &tell_user_message ($self, &msg($self,'jump-back'));
-
-		} elsif ($input eq '6') {
-
-		    # flag as inappropriate
-
-		} elsif ($input eq '0') {
-
-		    # hear the directions
-		    $dtmf = $self->agi->get_option
-			(&msg($self,'walk-query-results-brief'),"$digits", 4000);
-		    
-		    # will go to the next one on no input
-		    # or will act on it is there is input
-
-		} elsif ($input eq '*') {
-
-		    $done = 1;
-
-		}
-	    }
-	}
-    }
-
-    if (!defined ($dtmf) || $dtmf < 0) {
-	return -1;
-    }
-    return 0;
-}
 
 sub tell_user_message {
     my ($self, $msg) = @_;
@@ -1385,6 +1244,7 @@ sub get_hash_file {
     return $filename;
 }
 
+######################################################################
 sub rnd_alphanum {
     my ($num_digits) = @_;
     my (@d) = Math::Random::random_uniform_integer($num_digits,0,35);
@@ -1568,7 +1428,8 @@ sub create_user {
 sub get_action {
     my ($self, $action) = @_;
     
-    my $action_val = $self->{server}{schema}->resultset("Actions")->find({action_desc => $action});
+    my $action_val = $self->{server}{schema}->resultset("Actions")->find
+	({action_desc => $action});
     
     
     $self->log(4, "Action: desc=".$action_val->action_desc.", id=".$action_val->action_id);
@@ -1591,19 +1452,11 @@ sub get_callcount {
 #
 sub get_user_id {
     my ($self, $phone) = @_;
+
+    my $user = $self->{server}{schema}->resultset('UserPhones')->find
+	({phone_number => $phone});
     
-    $self->{server}{get_user_id_sth} =
-	$self->{server}{dbi}->prepare_cached
-	("SELECT user_id FROM users WHERE phone = ?");
-
-    $self->{server}{get_user_id_sth}->execute ($phone);
-
-    my $user_id = 0;
-    if ($self->{server}{get_user_id_sth}->rows > 0) {
-	$user_id = $self->{server}{get_user_id_sth}->fetchrow_arrayref()->[0];
-    }
-    $self->{server}{get_user_id_sth}->finish();
-    return $user_id;
+    return $user->user_id->user_id;
 }
 
 ######################################################################
@@ -1646,7 +1499,7 @@ sub set_user_name {
 
 
 ######################################################################
-
+#
 sub get_seconds_remaining_count {
     my ($self) = @_;
 
@@ -1685,90 +1538,6 @@ sub get_seconds_remaining_count {
 
 }
 
-
-
-######################################################################
-
-sub check_end_network_modify_menu {
-  my ($self, $state, $action) = @_;
-
-  if ($state eq 'timeout' || $state eq 'cancel' ||
-      $state eq 'hangup') {
-
-    if ($state eq 'timeout' || $state eq 'cancel') {
-      &play_random ($self, &msg($self,"cancelled-$action"), 'ok');
-    }
-    $self->log (4, "a $action s $state");
-    return 1;
-  }
-  return 0;
-}
-
-######################################################################
-sub get_network_of_friendship {
-    my ($self,$dst_user_id,$src_user_id) = @_;
-
-    if (!defined($src_user_id)) {
-	$src_user_id = $self->{user}->{id};
-    }
-
-    $self->{server}{get_network_of_friendship_sth} =
-	    $self->{server}{dbi}->prepare_cached
-	    ("SELECT channel from friends where src_user_id=?".
-	     " AND dst_user_id=?");
-    $self->{server}{get_network_of_friendship_sth}->execute
-	($src_user_id, $dst_user_id);
-
-    my $channel = undef;
-    if ($self->{server}{get_network_of_friendship_sth}->rows > 0) {
-	$channel = 
-	    $self->{server}{get_network_of_friendship_sth}->fetchrow_arrayref()->[0];
-    }
-    $self->{server}{get_network_of_friendship_sth}->finish();
-    return $channel;
-}
-
-######################################################################
-# XXX This function should not be in here
-
-sub select_network_menu {
-    my ($self,$prompt,$can_select_all) = @_;
-
-    $self->log (4, "start select_network_menu");
-
-    my $digits = "0123456789";
-    if ($can_select_all == 1) {
-		$digits = "0123456789";
-    }
-
-    my $network_code = &get_unchecked_small_number
-	($self, $prompt, $digits);
-
-    $self->log (4, "received network_code $network_code");
-
-    if ($network_code eq 'timeout' ||
-		$network_code eq 'hangup' ||
-		$network_code eq 'cancel') {
-			return $network_code;
-    }
-
-    $self->log (4, "end select_network_menu");
-
-    #return the group_id based on the selected slot
-    my $group_rs = $self->{server}{schema}->resultset('UserGroups')->search
-	(user_id => $self->{user}->{id}, slot => $network_code,
-	 {select => [qw/group_id/]});
-    
-    my $grp = $group_rs->next;
-    my $group_id = $grp->group_id->group_id if (defined($grp));
-#    if ($grp) {
-#	$group_id = $grp->group_id->group_id;
-#    }
-    $self->log(4, "Selected group: ".$group_id);
-    return $group_id;
-    #return (defined($grp)) ? $group = $group_rs->next : $group_rs;
-    
-}
 
 ######################################################################
 # client side of SMS daemon

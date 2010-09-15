@@ -30,6 +30,7 @@ my $one_hour_delay = 1;
 my $SEC_PER_DAY = 60*60*24;
 my $SEC_PER_WEEK = 604800;
 
+######################################################################
 sub year_month_day {
 
   my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) =
@@ -41,6 +42,7 @@ sub year_month_day {
   return $stamp;
 }
 
+######################################################################
 sub year_month_day_plus_n_days_dir {
     my ($days) = @_;
 
@@ -55,6 +57,7 @@ sub year_month_day_plus_n_days_dir {
     return $stamp;
 }
 
+######################################################################
 sub year_month_day_dir {
     my ($days) = @_;
 
@@ -67,7 +70,7 @@ sub year_month_day_dir {
     return $stamp;
 }
 
-
+######################################################################
 sub year_month {
 
   my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) =
@@ -79,6 +82,7 @@ sub year_month {
   return $stamp;
 }
 
+######################################################################
 sub epoch2stamp {
     my ($epoch) = @_;
 
@@ -92,6 +96,7 @@ sub epoch2stamp {
   return $stamp;
 }
 
+######################################################################
 sub epoch2year_mo_day {
     my ($epoch) = @_;
 
@@ -104,7 +109,7 @@ sub epoch2year_mo_day {
   return $stamp;
 }
 
-
+######################################################################
 sub file2epochdelta {
     my ($file) = @_;
 

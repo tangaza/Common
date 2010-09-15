@@ -82,8 +82,7 @@ sub entry {
 		  #    &msg($self, 'your caller id is invalid'),
 		   #   &msg($self, 'goodbye')],"*","0");
 		$self->log (2, "sorry");
-		$self->agi->stream_file
-		    (&msg($self, 'sorry'),"*","0");
+		&stream_file ($self, 'sorry',"*","0");
 		$self->log (2, "done sorry");
 
 		return;
@@ -96,8 +95,7 @@ sub entry {
 		if (! &user_has_hungup($self)) {
 		    $self->log (3, "ending session for user_id ".$self->{user}->{id}.
 			      " callerid ".$self->{callerid});
-		    $self->agi->stream_file
-			(&msg($self, 'goodbye'),"*","0");
+		    &stream_file ($self, 'goodbye',"*","0");
 		    $self->agi->hangup ();
 		}
 		&end_call($self);
@@ -106,14 +104,8 @@ sub entry {
 	    if ($@) {
 		$self->log (1, "Error caught by main: $@");
 
-		# Error occurred.
-		#
-
-		$self->agi->stream_file(
-		    [&msg($self, 'an-error-has-occured'),
-		     &msg($self, 'goodbye')],"*","0");
+		&stream_file(['an-error-has-occured', 'goodbye'],"*","0");
 	    }
-
         #};
 
     }
@@ -134,17 +126,15 @@ sub start_call {
     my $auth_res = &auth_pin ($self);
     
     if ($auth_res ne 'ok') {
-		return $auth_res;
+	return $auth_res;
     }
-
+    
     $self->{cbstate} = $self->agi->get_variable("CBSTATE");
     $self->log (3, "cbstate ".$self->{cbstate});
 
     if ($self->{cbstate} eq 'calledback') {
 
-
-	$self->{user}->{seconds_remaining} = &get_seconds_remaining_count
-	    ($self);
+	$self->{user}->{seconds_remaining} = &get_seconds_remaining_count ($self);
 
 	$self->log (3, "calledback id ".$self->{user}->{id}.
 	    " seconds remaining ".$self->{user}->{seconds_remaining});
@@ -209,54 +199,6 @@ sub end_call {
     $self->log (4, "end_call user ".$self->{user}->{id}." sec ".$seconds);
 
 }
-
-######################################################################
-
-sub check_for_invitation {
-    my ($self) = @_;
-
-    $self->log (3, "check_for_invitation start");
-
-    $self->{server}{check_for_invitation_sth} =
-	$self->{server}{dbi}->prepare_cached
-	("SELECT user_id FROM invitations WHERE status='new' ".
-	 "AND phone_number=?");
-	$self->{server}{check_for_invitation_sth}->execute
-	($self->{user}->{phone});
-
-    $self->log (3, "A");
-
-    if ($self->{server}{check_for_invitation_sth}->rows > 0) {
-
-	$self->log (3, "A-1");
-
-	my $friend_user_id =
-	    $self->{server}{check_for_invitation_sth}->fetchrow_arrayref()->[0];
-	$self->log (3, "check_for_invitation: user_id $friend_user_id ".
-		   "invited phone ".$self->{user}->{phone});
-	$self->{newuser} = 1;
-
-	my $friends_name_file = &get_users_name ($self,$friend_user_id);
-	$self->agi->stream_file
-	    ([&msg($self,'welcome-to-mosoko'),
-	      &msg($self,'You were invited'),$friends_name_file], "*#", "0");
-	$self->{played_intro} = 1;
-
-	$self->{server}{told_user_invitation_sth} =
-	    $self->{server}{dbi}->prepare_cached
-	("UPDATE invitations SET status='connected' WHERE phone_number=?");
-	$self->{server}{told_user_invitation_sth}->execute
-	    ($self->{user}->{phone});
-	$self->{server}{told_user_invitation_sth}->finish();
-
-    }
-
-    $self->log (3, "Done");
-
-    $self->{server}{check_for_invitation_sth}->finish();
-
-}
-
 
 ######################################################################
 
