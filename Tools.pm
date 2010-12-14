@@ -21,7 +21,7 @@
 package Nokia::Common::Tools;
 use Exporter;
 @ISA = ('Exporter');
-@EXPORT = ('get_max_results_to_listen_to', 'walk_query_results','dtmf_dispatch_static','dtmf_dispatch_dynamic', 'write_pid','reap_old_self','stream_file', 'say_number', 'get_channel_desc','user_has_hungup','get_hash_file','get_seconds_remaining_count','db_disconnect', 'place_call', 'codec', 'get_large_number', 'get_unchecked_large_number', 'get_unchecked_small_number', 'get_yes_no_option', 'get_dtmf_input','get_small_number','mv_tmp_to_comment_dir', 'mv_tmp_to_post_dir', 'mv_tmp_to_names_dir','mv_tmp_to_status_dir', 'mv_tmp_to_dir', 'record_file', 'get_max_uint','request_attendant', 'speech_or_dtmf_input', 'init_user', 'create_user', 'get_user_id', 'get_user_name','set_user_name', 'play_random', 'dtmf_quick_jump', 'init_tools', 'get_callcount', 'rnd_alphanum', 'sms_enqueue', 'unlink_file', 'unlink_tmp_file', 'set_nickname_file', 'get_nickname_file', 'dbi_connect');
+@EXPORT = ('get_max_results_to_listen_to', 'walk_query_results','dtmf_dispatch_static','dtmf_dispatch_dynamic', 'write_pid','reap_old_self','stream_file', 'say_number', 'get_channel_desc','user_has_hungup','get_hash_file','get_seconds_remaining_count','db_disconnect', 'place_call', 'codec', 'get_large_number', 'get_unchecked_large_number', 'get_unchecked_small_number', 'get_yes_no_option', 'get_dtmf_input','get_small_number','mv_tmp_to_comment_dir', 'mv_tmp_to_post_dir', 'mv_tmp_to_names_dir','mv_tmp_to_status_dir', 'mv_tmp_to_dir', 'record_file', 'get_max_uint','request_attendant', 'speech_or_dtmf_input', 'init_user', 'create_user', 'get_user_id', 'get_user_name','set_user_name', 'play_random', 'dtmf_quick_jump', 'init_tools', 'get_callcount', 'rnd_alphanum', 'sms_enqueue', 'unlink_file', 'unlink_tmp_file', 'set_nickname_file', 'get_nickname_file', 'dbi_connect', 'read_config');
 
 
 use strict;
@@ -1565,5 +1565,26 @@ sub sms_enqueue {
     close ($socket);
 }
 
+sub read_config {
+    my ($self, $path) = @_;
+    
+    open CONFIG, $path
+	or die ("Could not open $path");
+    
+    my %prefs;
+    
+    while (<CONFIG>) {
+	chomp;                  # no newline
+	s/\#.*//;               # no comments
+	s/^\s+//;               # no leading white
+	s/\s+$//;               # no trailing white
+	next unless length;     # anything left?
+	my ($var, $value) = split(/\s*=\s*/, $_, 2);
+	$prefs{$var} = $value;
+    } 
+    
+    close CONFIG;
+    return \%prefs;
+}
 
 1;
