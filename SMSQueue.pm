@@ -73,19 +73,18 @@ sub send_sms {
     $self->log (4, "trying sms to $phone msg $message");
 
     my $browser = LWP::UserAgent->new;
-
-    my $kannel_url = $self->get_property('kannel_url');
-    my $kannel_user = $self->get_property('kannel_user');
-    my $kannel_pw = $self->get_property('kannel_pw');
-
-    my $origin = $self->get_property('origin');
-    my $url = URI->new($self->get_property("sms_url_$origin"));
+    my $prefs = $self->get_property('prefs');
+    my $sms_url = $prefs->{sms}->{url};
     
+    my $origin = $self->get_property('origin');
+    my $url = URI->new($sms_url);
+    #TODO: Figure out how to use multiple sms sending options depending on
+    #origin of the sms
     if ($origin eq 'ke') {
 	$url->query_form
-	    ('username' => $self->get_property("sms_username_$origin"),
-	     'password' => $self->get_property("sms_password_$origin"),
-	     'source' => $self->get_property("sms_number_$origin"),
+	    ('username' => $prefs->{sms}->{user},
+	     'password' => $prefs->{sms}->{pass},
+	     'source' => $prefs->{sms}->{source},
 	     'destination' => $phone,
 	     'message' => $message
 	     );

@@ -40,7 +40,7 @@ use UNIVERSAL::require;
 
 ######################################################################
 
-my $calldir = $ENV{"NASI_OUTGOING"};
+my $calldir; #= $ENV{"NASI_OUTGOING"};
 my $cbCount = 0;
 
 my $HASH_FILE_LENGTH = 16;
@@ -49,8 +49,9 @@ my $DEFAULT_TIMEOUT = 5000;
 my $MAX_RESULTS_TO_LISTEN_TO = 60;
 
 # This can be an in-memory file system, for short-lived files
-my $tmp_dir = $ENV{"NASI_TMP"};
-my $tmp_rec_dir = $tmp_dir.'/record/';
+# set in init-tools
+my $tmp_dir; #= $ENV{"NASI_TMP"};
+my $tmp_rec_dir; #= $tmp_dir.'/record/';
 
 my $posts_dir = '/data/posts/';
 my $names_dir = '/data/names/';
@@ -83,7 +84,10 @@ sub get_max_uint {
 
 sub init_tools {
     my ($self) = @_;
-
+    my $prefs = $self->get_property('prefs');
+    $calldir = $prefs->{paths}->{NASI_OUTGOING};
+    $tmp_dir = $prefs->{paths}->{NASI_TMP};
+    $tmp_rec_dir = $tmp_dir.'/record/';
 }
 
 ######################################################################
@@ -1567,24 +1571,10 @@ sub sms_enqueue {
 
 sub read_config {
     my ($self, $path) = @_;
+    use Config::Tiny;
+    my $config = Config::Tiny->read($path);
     
-    open CONFIG, $path
-	or die ("Could not open $path");
-    
-    my %prefs;
-    
-    while (<CONFIG>) {
-	chomp;                  # no newline
-	s/\#.*//;               # no comments
-	s/^\s+//;               # no leading white
-	s/\s+$//;               # no trailing white
-	next unless length;     # anything left?
-	my ($var, $value) = split(/\s*=\s*/, $_, 2);
-	$prefs{$var} = $value;
-    } 
-    
-    close CONFIG;
-    return \%prefs;
+    return $config;
 }
 
 1;
