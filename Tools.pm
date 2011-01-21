@@ -52,12 +52,11 @@ my $MAX_RESULTS_TO_LISTEN_TO = 60;
 # set in init-tools
 my $tmp_dir; #= $ENV{"NASI_TMP"};
 my $tmp_rec_dir; #= $tmp_dir.'/record/';
-
-my $posts_dir = '/data/posts/';
-my $names_dir = '/data/names/';
-my $comments_dir = '/data/comments/';
-my $status_dir = '/data/status/';
-my $nicknames_dir = '/data/names/';
+my $posts_dir;# = '/data/posts/';
+my $names_dir;# = '/data/names/';
+my $comments_dir;# = '/data/comments/';
+my $status_dir;# = '/data/status/';
+my $nicknames_dir;# = '/data/names/';
 
 ######################################################################
 #
@@ -88,6 +87,11 @@ sub init_tools {
     $calldir = $prefs->{paths}->{NASI_OUTGOING};
     $tmp_dir = $prefs->{paths}->{NASI_TMP};
     $tmp_rec_dir = $tmp_dir.'/record/';
+    $posts_dir = $prefs->{paths}->{NASI_DATA}.'/posts/';
+    $names_dir = $prefs->{paths}->{NASI_DATA}.'/names/';
+    $comments_dir = $prefs->{paths}->{NASI_DATA}.'/comments/';
+    $status_dir = $prefs->{paths}->{NASI_DATA}.'/status/';
+    $nicknames_dir = $prefs->{paths}->{NASI_DATA}.'/names/';
 }
 
 ######################################################################
