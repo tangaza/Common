@@ -1415,7 +1415,7 @@ sub create_user {
     my $group_rs = $self->{server}{schema}->resultset('Groups');
     my $new_group = $group_rs->find_or_create
         (
-         {group_name => $desc->{phone}, group_type => 'mine', is_active => 'yes',
+         {group_name => $desc->{phone}, group_type => 'mine',
           user_groups => [{
 	      user_id => $new_user->id, slot => 1, is_quiet => 'no'}],
           user_group_histories => [{
