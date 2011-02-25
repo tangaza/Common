@@ -123,11 +123,11 @@ sub start_call {
 
     $self->log (3, "starting welcome_msg");
     
-    my $auth_res = &auth_pin ($self);
+#    my $auth_res = &auth_pin ($self);
     
-    if ($auth_res ne 'ok') {
-	return $auth_res;
-    }
+#    if ($auth_res ne 'ok') {
+#	return $auth_res;
+#    }
     
     $self->{cbstate} = $self->agi->get_variable("CBSTATE");
     $self->log (3, "cbstate ".$self->{cbstate});

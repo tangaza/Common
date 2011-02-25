@@ -49,7 +49,7 @@ sub init_sound {
     my $rs = $self->{server}{schema}->resultset('Languages');
     
     while (my $language = $rs->next) {
-        $language_id2name{$language->language_id} = $language->name;
+        $language_id2name{$language->id} = $language->name;
     }
     
 }

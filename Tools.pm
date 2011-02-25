@@ -189,6 +189,8 @@ sub dtmf_dispatch {
 	    ($words->{'pre'}, "$digits", "0");
     }
 
+    $self->log (4, "Wilting: $max_prompts : $dtmf");
+
     for (my $i = 0; $i < $max_prompts && defined($dtmf) && $dtmf == 0; $i++) {
 
 	if (&user_has_hungup($self)) { return 'hangup'; }
@@ -1329,20 +1331,20 @@ sub init_user {
 	return $res;
     }
     
-    my $rs = $self->{server}{schema}->resultset('Users')->search
+    my $rs = $self->{server}{schema}->resultset('Watumiaji')->search
 	({'phone_number' => $self->{user}->{phone}}, 
-	 {select => [qw/user_id status place_id user_pin callback_limit language_id/ ]},
+	 {select => [qw/id status place_id user_pin callback_limit language_id/ ]},
 	 {join => ['user_phones']}
 	 );
     
     if (my $user = $rs->next) {
-	$self->{user}->{id} = $user->user_id;
+	$self->{user}->{id} = $user->id;
 	$self->{user}->{status} = $user->status;
 	$self->{user}->{place_id} = $user->place_id;
 	#$self->{user}->{phone} = $user->phone_number;
 	$self->{user}->{pin} = $user->user_pin;
 	$self->{user}->{callback_limit} = $user->callback_limit;
-	$self->{user}->{language_id} = $user->language_id->language_id;
+	$self->{user}->{language_id} = $user->language_id->id;
     }
     else {
 	my %user_desc = ();
@@ -1401,10 +1403,11 @@ sub create_user {
    
     
     #creating user record
-    my $user_rs = $self->{server}{schema}->resultset('Users');
+    my $now = 'NOW()';
+    my $user_rs = $self->{server}{schema}->resultset('Watumiaji');
     my $new_user = $user_rs->create
 	({place_id => $desc->{place_id}, language_id => $desc->{language_id},
-	  create_stamp => undef, 
+	  create_stamp => \$now, 
 	  user_phones => [{
 	      country_id => 1, phone_number => $desc->{phone},
 	      is_primary => 'yes'}],
@@ -1412,7 +1415,7 @@ sub create_user {
     
     my $action = &get_action($self, "joined group");
     
-    my $group_rs = $self->{server}{schema}->resultset('Groups');
+    my $group_rs = $self->{server}{schema}->resultset('Vikundi');
     my $new_group = $group_rs->find_or_create
         (
          {group_name => $desc->{phone}, group_type => 'mine',
@@ -1440,7 +1443,7 @@ sub get_action {
 	({action_desc => $action});
     
     
-    $self->log(4, "Action: desc=".$action_val->action_desc.", id=".$action_val->action_id);
+    $self->log(4, "Action: desc=".$action_val->action_desc.", id=".$action_val->id);
     
     return $action_val->action_id;
 }
@@ -1472,7 +1475,7 @@ sub get_user_id {
 sub get_user_name {
     my ($self, $user_id) = @_;
     
-    my $user = $self->{server}{schema}->resultset('Users')->find
+    my $user = $self->{server}{schema}->resultset('Watumiaji')->find
 	($user_id, {select => [qw/name_file/]});
     
     $self->log (4, "get_users_name start user_id $user_id");
@@ -1498,7 +1501,7 @@ sub set_user_name {
 
     $name_file = &mv_tmp_to_names_dir ($self, $name_file);
     
-    my $user_rs = $self->{server}{schema}->resultset('Users')->find($user_id);
+    my $user_rs = $self->{server}{schema}->resultset('Watumiaji')->find($user_id);
     $user_rs->update({name_file => $name_file});
     
     return $name_file;
