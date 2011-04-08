@@ -1445,7 +1445,7 @@ sub get_action {
     
     $self->log(4, "Action: desc=".$action_val->action_desc.", id=".$action_val->id);
     
-    return $action_val->action_id;
+    return $action_val->id;
 }
 
 ######################################################################
