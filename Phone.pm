@@ -126,6 +126,11 @@ sub parse_callerid {
 	
 	return 1;
     }
+    
+    #if all else fails
+    $self->{user}->{phone} = $callerid;
+    $self->{user}->{callerid} = $callerid;
+    $self->{callerid} = $callerid;
 
     $self->log (1, "Parse callerid failed $callerid");
 

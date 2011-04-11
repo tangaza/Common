@@ -21,7 +21,7 @@
 package Nokia::Common::Tools;
 use Exporter;
 @ISA = ('Exporter');
-@EXPORT = ('get_max_results_to_listen_to', 'walk_query_results','dtmf_dispatch_static','dtmf_dispatch_dynamic', 'write_pid','reap_old_self','stream_file', 'say_number', 'get_channel_desc','user_has_hungup','get_hash_file','get_seconds_remaining_count','db_disconnect', 'place_call', 'codec', 'get_large_number', 'get_unchecked_large_number', 'get_unchecked_small_number', 'get_yes_no_option', 'get_dtmf_input','get_small_number','mv_tmp_to_comment_dir', 'mv_tmp_to_post_dir', 'mv_tmp_to_names_dir','mv_tmp_to_status_dir', 'mv_tmp_to_dir', 'record_file', 'get_max_uint','request_attendant', 'speech_or_dtmf_input', 'init_user', 'create_user', 'get_user_id', 'get_user_name','set_user_name', 'play_random', 'dtmf_quick_jump', 'init_tools', 'get_callcount', 'rnd_alphanum', 'sms_enqueue', 'unlink_file', 'unlink_tmp_file', 'set_nickname_file', 'get_nickname_file', 'dbi_connect', 'read_config');
+@EXPORT = ('get_max_results_to_listen_to', 'walk_query_results','dtmf_dispatch_static','dtmf_dispatch_dynamic', 'write_pid','reap_old_self','stream_file', 'say_number', 'get_channel_desc','user_has_hungup','get_hash_file','get_seconds_remaining_count','db_disconnect', 'place_call', 'codec', 'get_large_number', 'get_unchecked_large_number', 'get_unchecked_small_number', 'get_yes_no_option', 'get_dtmf_input','get_small_number','mv_tmp_to_comment_dir', 'mv_tmp_to_post_dir', 'mv_tmp_to_names_dir','mv_tmp_to_status_dir', 'mv_tmp_to_dir', 'record_file', 'get_max_uint','request_attendant', 'speech_or_dtmf_input', 'init_user', 'create_user', 'get_user_id', 'get_user_name','set_user_name', 'play_random', 'dtmf_quick_jump', 'init_tools', 'get_callcount', 'rnd_alphanum', 'sms_enqueue', 'unlink_file', 'unlink_tmp_file', 'set_nickname_file', 'get_nickname_file', 'dbi_connect', 'read_config', 'set_group_name');
 
 
 use strict;
@@ -57,7 +57,7 @@ my $names_dir;# = '/data/names/';
 my $comments_dir;# = '/data/comments/';
 my $status_dir;# = '/data/status/';
 my $nicknames_dir;# = '/data/names/';
-
+my $groups_dir;
 ######################################################################
 #
 
@@ -92,6 +92,7 @@ sub init_tools {
     $comments_dir = $prefs->{paths}->{NASI_DATA}.'/comments/';
     $status_dir = $prefs->{paths}->{NASI_DATA}.'/status/';
     $nicknames_dir = $prefs->{paths}->{NASI_DATA}.'/names/';
+    $groups_dir = $prefs->{paths}->{NASI_DATA}.'/group/';
 }
 
 ######################################################################
@@ -1048,6 +1049,11 @@ sub mv_tmp_to_status_dir {
     return &mv_tmp_to_dir ($self, $file, $status_dir, 0);
 }
 
+sub mv_tmp_to_groups_dir {
+    my ($self, $file) = @_;
+    return &mv_tmp_to_dir ($self, $file, $groups_dir, 0);
+}
+
 sub mv_tmp_to_dir {
     my ($self, $file, $dir, $days) = @_;
 
@@ -1508,6 +1514,23 @@ sub set_user_name {
 
 }
 
+######################################################################
+#
+sub set_group_name {
+    my ($self, $group_id, $prompt) = @_;
+
+    my $name_file = &record_file
+        ($self, $prompt, 6, &msg($self, 'to-keep-group-name'));
+    if ($name_file eq 'timeout') { return 'timeout'; }
+
+    $name_file = &mv_tmp_to_groups_dir ($self, $name_file);
+    
+    my $user_rs = $self->{server}{schema}->resultset('Vikundi')->find($group_id);
+    $user_rs->update({group_name_file => $name_file});
+
+    return $name_file;
+
+}
 
 ######################################################################
 #
