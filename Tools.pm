@@ -92,7 +92,7 @@ sub init_tools {
     $comments_dir = $prefs->{paths}->{NASI_DATA}.'/comments/';
     $status_dir = $prefs->{paths}->{NASI_DATA}.'/status/';
     $nicknames_dir = $prefs->{paths}->{NASI_DATA}.'/names/';
-    $groups_dir = $prefs->{paths}->{NASI_DATA}.'/group/';
+    $groups_dir = $prefs->{paths}->{NASI_DATA}.'/groups/';
 }
 
 ######################################################################
@@ -1521,12 +1521,12 @@ sub set_group_name {
 
     my $name_file = &record_file
         ($self, $prompt, 6, &msg($self, 'to-keep-group-name'));
-    if ($name_file eq 'timeout') { return 'timeout'; }
-
+    if ($name_file eq 'timeout' || $name_file eq 'cancel') { return $name_file; }
+    
     $name_file = &mv_tmp_to_groups_dir ($self, $name_file);
     
     my $user_rs = $self->{server}{schema}->resultset('Vikundi')->find($group_id);
-    $user_rs->update({group_name_file => $name_file});
+    $user_rs->update({group_name_file => $name_file, is_active => 'yes'});
 
     return $name_file;
 
