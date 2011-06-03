@@ -26,7 +26,32 @@ use Exporter;
 
 use strict;
 
+=head1 NAME
+
+Nokia::Common::Phone - Checks incoming phone number
+
+=head1 DESCRIPTION
+
+This module parses caller-ids for to try and determine the origin of the call.
+It also checks caller-ids for outgoing calls to make sure that the system only 
+calls valid numbers e.g avoid calling 0800 numbers.
+
+=cut
 ######################################################################
+
+=head1 METHODS
+
+=head2 is_valid_outbound_number
+
+Checks whether the number is valid depending on the origin of the call
+
+=over 4 
+
+=item Args:
+
+$number: The phone number
+
+=cut
 sub is_valid_outbound_number {
     my ($self, $number) = @_;
 
@@ -61,6 +86,12 @@ sub is_valid_outbound_number {
 }
 
 ######################################################################
+
+=head2 parse_callerid
+
+Parses the caller id to determine what country the call is originating from
+
+=cut
 sub parse_callerid {
     my ($self) = @_;
 
@@ -139,5 +170,13 @@ sub parse_callerid {
 
     return 1;
 }
+
+=head1 AUTHORS
+
+Billy Odero, Jonathan Ledlie
+
+Copyright (C) 2010 Nokia Corporation.
+
+=cut
 
 1;

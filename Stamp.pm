@@ -20,6 +20,18 @@
 
 package Nokia::Common::Stamp;
 
+=head1 NAME
+
+Nokia::Common::Stamp
+
+=head1 DESCRIPTION
+
+This module manages all time/date conversions
+
+=head1 METHODS
+
+=cut
+
 use Exporter;
 @ISA = ('Exporter');
 @EXPORT = ('year_month_day','year_month_day_dir','year_month',
@@ -31,6 +43,12 @@ my $SEC_PER_DAY = 60*60*24;
 my $SEC_PER_WEEK = 604800;
 
 ######################################################################
+
+=head2 year_month_day
+
+Returns the current time into a date-time value of the form yyyymmdd
+
+=cut
 sub year_month_day {
 
   my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) =
@@ -43,6 +61,21 @@ sub year_month_day {
 }
 
 ######################################################################
+
+=head2 year_month_day_plus_n_days_dir
+
+Returns a directory path of the form yyyy/mm/dd/ formed from the current 
+date-time
+
+=over 4
+
+=item Args:
+
+$days: delay adjustment to the current time
+
+=back
+
+=cut
 sub year_month_day_plus_n_days_dir {
     my ($days) = @_;
 
@@ -58,6 +91,13 @@ sub year_month_day_plus_n_days_dir {
 }
 
 ######################################################################
+
+=head2 year_month_day_dir
+
+Returns a directory path of the form yyyy/mm/dd/ formed from the current 
+date-time
+
+=cut
 sub year_month_day_dir {
     my ($days) = @_;
 
@@ -71,6 +111,12 @@ sub year_month_day_dir {
 }
 
 ######################################################################
+
+=head2 year_month
+
+Returns the current date-time in the form C<yyyy-mm>
+
+=cut
 sub year_month {
 
   my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) =
@@ -134,5 +180,13 @@ sub file2epochdelta {
 	die ("File name does not contain epoch time: $filename");
     }
 }
+
+=head1 AUTHORS
+
+Billy Odero, Jonathan Ledlie
+
+Copyright (C) 2010 Nokia Corporation. 
+
+=cut
 
 1;

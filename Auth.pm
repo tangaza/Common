@@ -29,10 +29,30 @@ use DBI;
 use Nokia::Common::Tools;
 use Nokia::Common::Sound;
 
+=head1 NAME
+
+Nokia::Common::Auth
+
+=head1 DESCRIPTION
+
+This module is implements PIN-based security within the system so that 
+any access to the system is protected from someone who might have the 
+users phone.
+
+=cut
+
 # Both functions assume four digit pins
 
 ######################################################################
 
+=head2 auth_pin
+
+Authenticates the user's to the system.
+
+If the user has a pin, it gives the user thee chances to match a
+four-digit pin, otherwise it does nothing.
+
+=cut
 sub auth_pin {
     my ($self) = @_;
 
@@ -109,6 +129,11 @@ sub auth_pin {
 
 ######################################################################
 
+=head2 set_pin
+    
+Allows the user to set a pin.
+
+=cut
 sub set_pin {
     my ($self) = @_;
 
@@ -181,5 +206,13 @@ sub set_pin {
 }
 
 ######################################################################
+
+=head1 AUTHORS
+
+Billy Odero, Jonathan Ledlie
+
+Copyright (C) 2010 Nokia Corporation.
+
+=cut
 
 1;
