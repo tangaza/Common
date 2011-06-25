@@ -40,7 +40,7 @@ my $RING_SECONDS = 2;
 
 =head1 NAME
 
-Nokia::Common::Callback
+Nokia::Common::Callback - Entry point
 
 =head1 DESCRIPTION
 

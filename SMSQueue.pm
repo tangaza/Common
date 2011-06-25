@@ -37,7 +37,7 @@ Nokia::Common::SMSQueue - SMS buffer daemon
 Library for simple daemon that buffers outgoing SMS messages.
 Started with daemon/sms-send-daemon.pl.
 
-=head 1 METHODS
+=head2 1 METHODS
 
 =cut
 
