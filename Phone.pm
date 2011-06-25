@@ -36,10 +36,11 @@ This module parses caller-ids for to try and determine the origin of the call.
 It also checks caller-ids for outgoing calls to make sure that the system only 
 calls valid numbers e.g avoid calling 0800 numbers.
 
-=cut
-######################################################################
-
 =head1 METHODS
+
+=cut
+
+######################################################################
 
 =head2 is_valid_outbound_number
 
@@ -51,7 +52,10 @@ Checks whether the number is valid depending on the origin of the call
 
 $number: The phone number
 
+=back
+
 =cut
+
 sub is_valid_outbound_number {
     my ($self, $number) = @_;
 
