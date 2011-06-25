@@ -38,7 +38,30 @@ use Nokia::Common::Sound;
 my $DEBUG = 0;
 my $RING_SECONDS = 2;
 
+=head1 HEAD
+
+Nokia::Common::Callback
+
+=head1 DESCRIPTION
+
+Entry point into the system that tries to figure out whether the user is
+calling through or just wants to be called back.
+
+=head1 METHODS
+
+=cut
+
 ######################################################################
+=head2 callback
+
+Entry point into the system. Invoked by Asterisk from extensions.conf.
+It sets up the calling user's initial state for each new call.
+
+Listens to the state of a channel to determine whether the user was trying 
+to call us or wants to be called back. It sets `CBSTATE` to the appropriate
+state.
+
+=cut
 
 sub callback {
     my ($self) = @_;
@@ -119,6 +142,15 @@ sub callback {
 
 ######################################################################
 
+=head2 configure_hook
+
+Sets up initial configurations e.g. sound, database, tools as part of the call setup
+procedure.
+
+See L<Net::Server>
+
+=cut
+
 sub configure_hook {
     my $self = shift;
     #print STDERR "Running configure hook\n";
@@ -128,6 +160,14 @@ sub configure_hook {
 }
 
 ######################################################################
+
+=head2 pre_server_close_hook
+
+Performs any necessary clean-ups just before the server terminates.
+
+See L<Net::Server>.
+
+=cut
 
 sub pre_server_close_hook {
     my $self = shift;
@@ -149,6 +189,15 @@ sub pre_configure_hook {
 }
 
 ######################################################################
+
+=head2 write_to_log_hook
+
+This hook handles writing to log files
+
+See L<Net::Server>.
+
+=cut
+
 sub write_to_log_hook {
     my $self = shift;
     my $level  = shift;
@@ -159,6 +208,14 @@ sub write_to_log_hook {
     $self->Net::Server::write_to_log_hook($level, "$date $func_name $msg");
     return;
 }
+
+=head1 AUTHORS
+
+Billy Odero, Jonathan Ledlie
+
+Copyright (C) 2010 Nokia Corporation.
+
+=cut
 
 
 1;

@@ -37,7 +37,28 @@ use Nokia::Common::Sound;
 use Nokia::Common::Phone;
 use Nokia::Common::Auth;
 
+=head1 NAME
+
+Nokia::Common::Entry - Entry into the system
+
+=head1 DESCRIPTION
+
+Entry point into the system. It sets up the initial system and user state
+necessary for a call to the system.
+
+=head1 METHODS
+
+=cut
+
 ######################################################################
+
+=head2 entry
+
+Entry point into the system. Invoked by Asterisk from extensions.conf.
+It sets up the initial state of the system for each new call and cleans up
+when the call terminates.
+
+=cut
 
 sub entry {
     my ($self) = @_;
@@ -118,6 +139,13 @@ sub entry {
 
 ######################################################################
 
+=head2 start_call
+
+Checks the state of the call to determine if the user is flashing or calling through 
+and then initializes the appropriate variables required by the system.
+
+=cut
+
 sub start_call {
     my ($self) = @_;
 
@@ -184,6 +212,13 @@ sub set_alarms {
 
 ######################################################################
 
+=head2 end_call
+
+Performs cleanup and logging when the call ends i.e. user terminates the call or the 
+call terminates because of an error.
+
+=cut
+
 sub end_call {
     my ($self) = @_;
 
@@ -202,6 +237,15 @@ sub end_call {
 
 ######################################################################
 
+=head2 configure_hook
+
+Sets up initial configurations e.g. sound, database, tools as part of the call setup
+procedure.
+
+See L<Net::Server>
+
+=cut
+
 sub configure_hook {
     my $self = shift;
 
@@ -217,6 +261,14 @@ sub configure_hook {
 }
 
 ######################################################################
+
+=head2 pre_server_close_hook
+
+Performs any necessary clean-ups just before the server terminates.
+
+See L<Net::Server>.
+
+=cut
 
 sub pre_server_close_hook {
     my $self = shift;
@@ -251,6 +303,15 @@ sub pre_configure_hook {
 }
 
 ######################################################################
+
+=head2 write_to_log_hook
+
+This hook handles writing to log files
+
+See L<Net::Server>.
+
+=cut
+
 sub write_to_log_hook {
     my $self = shift;
     my $level  = shift;
@@ -267,5 +328,14 @@ sub write_to_log_hook {
     return;
 }
 
+######################################################################
+
+=head1 AUTHORS
+
+Billy Odero, Jonathan Ledlie
+
+Copyright (C) 2010 Nokia Corporation.
+
+=cut
 
 1;

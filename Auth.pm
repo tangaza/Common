@@ -31,13 +31,15 @@ use Nokia::Common::Sound;
 
 =head1 NAME
 
-Nokia::Common::Auth
+Nokia::Common::Auth - User authentication module
 
 =head1 DESCRIPTION
 
 This module is implements PIN-based security within the system so that 
 any access to the system is protected from someone who might have the 
 users phone.
+
+=head1 METHODS
 
 =cut
 

@@ -22,7 +22,7 @@ package Nokia::Common::Stamp;
 
 =head1 NAME
 
-Nokia::Common::Stamp
+Nokia::Common::Stamp - Date/Time formatting and conversions.
 
 =head1 DESCRIPTION
 
@@ -129,6 +129,13 @@ sub year_month {
 }
 
 ######################################################################
+
+=head2 epoch2stamp
+
+Converts the supplied epoch time to a timestamp value of the form C<yyyy-mm-dd hh:mm>
+
+=cut
+
 sub epoch2stamp {
     my ($epoch) = @_;
 
@@ -143,6 +150,13 @@ sub epoch2stamp {
 }
 
 ######################################################################
+
+=head2 epoch2year_mo_day
+
+Converts the supplied epoch time to a date/time value of the form C<yyyy-mm-dd>
+
+=cut
+
 sub epoch2year_mo_day {
     my ($epoch) = @_;
 
@@ -156,6 +170,14 @@ sub epoch2year_mo_day {
 }
 
 ######################################################################
+
+=head2 file2epochdelta
+
+Gets the statistics from the supplied file and returns the timestamp value of the 
+date the file was last modified. 
+
+=cut
+
 sub file2epochdelta {
     my ($file) = @_;
 
@@ -180,6 +202,8 @@ sub file2epochdelta {
 	die ("File name does not contain epoch time: $filename");
     }
 }
+
+######################################################################
 
 =head1 AUTHORS
 
