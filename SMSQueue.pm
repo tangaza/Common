@@ -21,20 +21,35 @@
 
 package Nokia::Common::SMSQueue;
 
-# Library for simple daemon that buffers outgoing SMS messages.
-# Started with daemon/sms-send-daemon.pl.
-
 use base qw(Net::Server);
-
-
 use strict;
 use POSIX qw(strftime);
 use Data::Dumper;
 use Nokia::Common::Tools;
 
+
+=head1 NAME
+
+Nokia::Common::SMSQueue - SMS buffer daemon
+
+=head1 DESCRIPTION
+
+Library for simple daemon that buffers outgoing SMS messages.
+Started with daemon/sms-send-daemon.pl.
+
+=head 1 METHODS
+
+=cut
+
 ######################################################################
-# server side of sms queue.
-# waits for SMS messages and sends them out FIFO
+
+=head2 process_request
+
+Server side of sms queue.
+
+Waits for SMS messages and sends them out FIFO
+
+=cut
 
 sub process_request {
     my $self = shift;
@@ -64,8 +79,15 @@ sub process_request {
 }
 
 #######################################################################
-# Example:
-# &send_sms ($self, $self->{user}->{phone}, "Here is the message");
+
+=head2 send_sms
+
+Send out SMS's from the queue.
+
+Example:
+&send_sms ($self, $self->{user}->{phone}, "Here is the message");
+
+=cut
 
 sub send_sms {
     my ($self, $phone, $message) = @_;
@@ -117,6 +139,15 @@ sub send_sms {
 
 
 ######################################################################
+
+=head2 write_to_log_hook
+
+This hook handles writing to log files
+
+See L<Net::Server>.
+
+=cut
+
 sub write_to_log_hook {
     my $self = shift;
     my $level  = shift;
@@ -125,5 +156,15 @@ sub write_to_log_hook {
     my $func_name = (caller(2))[3];
     $self->Net::Server::write_to_log_hook($level, "$date $func_name $msg");
 }
+
+######################################################################
+
+=head1 AUTHORS
+
+Billy Odero, Jonathan Ledlie
+
+Copyright (C) 2010 Nokia Corporation.
+
+=cut
 
 1;

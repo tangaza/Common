@@ -29,6 +29,18 @@ use File::Basename;
 use strict;
 use warnings;
 
+=head1 NAME
+
+Nokia::Common::Sound - Audio manager
+
+=head1 DESCRIPTION
+
+Manages all voice input
+
+=head1 METHODS
+
+=cut
+
 ######################################################################
 # TODO As messages get solidified and recorded properly, put them in here.
 
@@ -42,6 +54,13 @@ my %msgs = ();
 my %language_id2name = ();
 
 ######################################################################
+
+=head2 init_sound
+
+Initializes parameters necessary for processing sound files
+
+=cut
+
 sub init_sound {
     my $self = shift;
 
@@ -55,6 +74,13 @@ sub init_sound {
 }
 
 ######################################################################
+
+=head2 get_language_name
+
+Returns the name of the language based on it's language id
+
+=cut
+
 sub get_language_name {
     my ($self, $language_id) = @_;
     
@@ -65,6 +91,14 @@ sub get_language_name {
 }
 
 ######################################################################
+
+=head2 msg
+
+Uses the supplied '$words' parameter to loop through the file recordings
+in the filesystem and returns the full system filepath needed for playback
+
+=cut
+
 sub msg {
     my ($self, $words) = @_;
 
@@ -152,6 +186,14 @@ my $T2WDIR= "/usr/bin/";
 # http://search.cpan.org/src/JAMESGOL/asterisk-perl-0.10/examples/directory.agi
 ################################################################################
 # 
+
+=head2 getTTSFilename
+
+If the file to be played-back does not exist this method generates a TTS wav file
+that will be played back instead
+
+=cut
+
 sub getTTSFilename {
   
     my ($self, $text) = @_;
@@ -172,6 +214,16 @@ sub getTTSFilename {
     return "$SOUNDDIR".basename($wavefile,".wav");
 } # sub getTTSFilename 
 
+
+######################################################################
+
+=head1 AUTHORS
+
+Billy Odero, Jonathan Ledlie
+
+Copyright (C) 2010 Nokia Corporation.
+
+=cut
 
 
 1;

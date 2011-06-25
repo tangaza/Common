@@ -38,7 +38,7 @@ use Nokia::Common::Sound;
 my $DEBUG = 0;
 my $RING_SECONDS = 2;
 
-=head1 HEAD
+=head1 NAME
 
 Nokia::Common::Callback
 
