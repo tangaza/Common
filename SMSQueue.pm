@@ -92,11 +92,9 @@ $phone: The phone number that is to receive the SMS
 
 $message: The message being sent
 
-=back 
-
 =item Example:
 
-&send_sms ($self, $self->{user}->{phone}, "Here is the message");
+    &send_sms ($self, $self->{user}->{phone}, "Here is the message");
 
 =back
 
