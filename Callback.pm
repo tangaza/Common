@@ -209,6 +209,8 @@ sub write_to_log_hook {
     return;
 }
 
+######################################################################
+
 =head1 AUTHORS
 
 Billy Odero, Jonathan Ledlie

@@ -37,7 +37,7 @@ Nokia::Common::SMSQueue - SMS buffer daemon
 Library for simple daemon that buffers outgoing SMS messages.
 Started with daemon/sms-send-daemon.pl.
 
-=head2 1 METHODS
+=head2 METHODS
 
 =cut
 
@@ -84,8 +84,21 @@ sub process_request {
 
 Send out SMS's from the queue.
 
-Example:
+=over 4
+
+=item Args:
+
+$phone: The phone number that is to receive the SMS
+
+$message: The message being sent
+
+=back 
+
+=item Example:
+
 &send_sms ($self, $self->{user}->{phone}, "Here is the message");
+
+=back
 
 =cut
 

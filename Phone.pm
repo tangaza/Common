@@ -50,7 +50,7 @@ Checks whether the number is valid depending on the origin of the call
 
 =item Args:
 
-$number: The phone number
+$number: The phone number being validated
 
 =back
 

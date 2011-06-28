@@ -79,6 +79,14 @@ sub init_sound {
 
 Returns the name of the language based on it's language id
 
+=over 4
+
+=item Args:
+
+$language_id: The id of language whose name is being requested 
+
+=back
+
 =cut
 
 sub get_language_name {
@@ -94,8 +102,16 @@ sub get_language_name {
 
 =head2 msg
 
-Uses the supplied '$words' parameter to loop through the file recordings
-in the filesystem and returns the full system filepath needed for playback
+Uses the supplied C<$words> parameter to loop through the file recordings
+in the filesystem and returns the full system filepath to be played back
+
+=over 4
+
+=item Args:
+
+$words: The name of the speech file to be played
+
+=back
 
 =cut
 
@@ -191,6 +207,14 @@ my $T2WDIR= "/usr/bin/";
 
 If the file to be played-back does not exist this method generates a TTS wav file
 that will be played back instead
+
+=over 4
+
+=item Args:
+
+$text: The text to be converted from text to speech
+
+=back
 
 =cut
 

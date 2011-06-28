@@ -132,7 +132,7 @@ sub auth_pin {
 ######################################################################
 
 =head2 set_pin
-    
+
 Allows the user to set a pin.
 
 =cut

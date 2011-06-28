@@ -71,7 +71,7 @@ date-time
 
 =item Args:
 
-$days: delay adjustment to the current time
+$days: delta/delay adjustment to the current time
 
 =back
 
@@ -96,6 +96,14 @@ sub year_month_day_plus_n_days_dir {
 
 Returns a directory path of the form yyyy/mm/dd/ formed from the current 
 date-time
+
+=over 4
+
+=item Args:
+
+$days: delta/delay adjustment to the current time
+
+=back
 
 =cut
 sub year_month_day_dir {
@@ -134,6 +142,14 @@ sub year_month {
 
 Converts the supplied epoch time to a timestamp value of the form C<yyyy-mm-dd hh:mm>
 
+=over 4
+
+=item Args:
+
+$epoch: The epoch time to be formatted
+
+=back
+
 =cut
 
 sub epoch2stamp {
@@ -155,6 +171,14 @@ sub epoch2stamp {
 
 Converts the supplied epoch time to a date/time value of the form C<yyyy-mm-dd>
 
+=over 4
+
+=item Args:
+
+$epoch: The epoch time to be formatted
+
+=back
+
 =cut
 
 sub epoch2year_mo_day {
@@ -175,6 +199,14 @@ sub epoch2year_mo_day {
 
 Gets the statistics from the supplied file and returns the timestamp value of the 
 date the file was last modified. 
+
+=over 4
+
+=item Args:
+
+$file: The filepath to the file whose date property is to be used
+
+=back
 
 =cut
 
