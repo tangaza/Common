@@ -1984,13 +1984,25 @@ sub sms_enqueue {
 	return;
     }
 
-    my $socket = IO::Socket::INET->new(PeerAddr => '127.0.0.1',
-				       PeerPort => 9275,
-				       Proto => "tcp",
-				       Type => SOCK_STREAM)
-	or die "Could not connect to sms daemon";
-    print $socket "$phone $msg";
-    close ($socket);
+    my $prefs = $self->get_property('prefs');
+    my $gateway_active = $prefs->{'voip-gsm-gateway'}->{active};
+    if ($gateway_active eq 'true') {
+	my $sms_out = "$phone\n$msg";
+	# Set(MESSAGE(body)=${SMSOUTRAW})
+	# Note: unclear if this will work b/c of encoding problem
+	$self->agi->set_variable("MESSAGE(body)", $sms_out);
+	# MessageSend(sip:gsm1) 
+	$self->agi->exec('MessageSend', $prefs->{'voip-gsm-gateway'}->{'sip_user'});
+    } else {
+
+	my $socket = IO::Socket::INET->new(PeerAddr => '127.0.0.1',
+					   PeerPort => 9275,
+					   Proto => "tcp",
+					   Type => SOCK_STREAM)
+	    or die "Could not connect to sms daemon";
+	print $socket "$phone $msg";
+	close ($socket);
+    }
 }
 
 ######################################################################
