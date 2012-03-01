@@ -20,11 +20,6 @@
 
 package Nokia::Common::Callback;
 
-use Exporter;
-@ISA = ('Exporter');
-@EXPORT = ('configure_hook', 'pre_server_close_hook', 'write_to_log_hook', 'post_configure_hook');
-
-
 use strict;
 use Data::Dumper;
 use POSIX qw(strftime);
@@ -72,11 +67,23 @@ sub callback {
     
     $self->{stamp} = time;
     $self->{callerid} = $self->input('callerid');
+    if (defined($self->{callerid})) {
+	$self->log(4, "CallerID: ".$self->{callerid});
+    }
+
     $self->{origin} = $self->agi->get_variable('origin');
+    if (defined($self->{origin})) {
+	$self->log(4, "Origin: ".$self->{origin});
+    }
+
     $self->{callout_ext} = $self->agi->get_variable("callout-ext-$self->{origin}");
     $self->{sms_number} = $self->agi->get_variable("sms-number-$self->{origin}");
-    
-    $self->log(4, "Call Origin: ".$self->agi->get_variable("ext-$self->{origin}"));
+
+    my $ext_origin = "ext-$self->{origin}";
+    if (defined($ext_origin)) {
+	$self->log(4, "Call Origin: $ext_origin");
+    }
+
 
     eval {
 
@@ -138,75 +145,6 @@ sub callback {
 
     $self->log (4, "END COMMON ".&get_channel_desc($self)."\n\n");
 
-}
-
-######################################################################
-
-=head2 configure_hook
-
-Sets up initial configurations e.g. sound, database, tools as part of the call setup
-procedure.
-
-See L<Net::Server>
-
-=cut
-
-sub configure_hook {
-    my $self = shift;
-    #print STDERR "Running configure hook\n";
-    &dbi_connect ($self);
-    &init_tools ($self);
-    &init_sound ($self);
-}
-
-######################################################################
-
-=head2 pre_server_close_hook
-
-Performs any necessary clean-ups just before the server terminates.
-
-See L<Net::Server>.
-
-=cut
-
-sub pre_server_close_hook {
-    my $self = shift;
-    #print STDERR "Running pre_server_close_hook\n";
-    &db_disconnect ($self);
-}
-
-######################################################################
-
-sub post_configure_hook {
-    my $self = shift;
-}
-
-
-######################################################################
-
-sub pre_configure_hook {
-    my $self = shift;
-}
-
-######################################################################
-
-=head2 write_to_log_hook
-
-This hook handles writing to log files
-
-See L<Net::Server>.
-
-=cut
-
-sub write_to_log_hook {
-    my $self = shift;
-    my $level  = shift;
-    my $msg  = shift || '';
-    my $date = strftime("[%d-%b-%Y %H:%M:%S]:", localtime);
-    my $func_name = (caller(2))[3];
-    # TODO Add uid
-    $self->Net::Server::write_to_log_hook($level, "$date $func_name $msg");
-    return;
 }
 
 ######################################################################
