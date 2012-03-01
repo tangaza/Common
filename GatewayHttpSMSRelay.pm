@@ -25,6 +25,8 @@ package Nokia::Common::GatewayHttpSMSRelay;
 #@ISA = ('Exporter');
 #@EXPORT = ('sms_relay');
 use strict;
+use HTTP::Request::Common;
+use LWP::Simple;
 
 =head1 NAME
 
@@ -65,22 +67,43 @@ sub sms_relay {
 
     my $response = &post_msg($self, $sender, $msg);
 
-    my $smsOut = "$sender\n$response";
+    if ($response eq '') {
+	# error condition
+	$self->agi->set_variable("SMSOUT", "");
+    } else {
+	my $smsOut = "$sender\n$response";
 
-    # Make it possible to send back to Asterisk
-    my $smsEncodedOut = uri_escape($smsOut);
+	# Make it possible to send back to Asterisk
+	my $smsEncodedOut = uri_escape($smsOut);
 
-    # Assign it to a variable so it is available when we return from
-    # the AGI.
-    $self->agi->set_variable("SMSOUT", $smsEncodedOut);
+	# Assign it to a variable so it is available when we return from
+	# the AGI.
+	$self->agi->set_variable("SMSOUT", $smsEncodedOut);
+    }
 }
 
 ######################################################################
 
 sub post_msg {
     my ($self, $sender, $msg) = @_;
-    my $response = '';
-    return $response;
+
+    # same as url in /etc/tangaza/kannel/tangaza.conf
+    my $url = "http://localhost/tangaza/";
+    my $ua = LWP::UserAgent->new;
+
+    my $response = $ua->post($url, "X_KANNEL_FROM" => $sender,
+			     "Content" => $msg);
+    if ($response->is_success) {
+	my $content = $response->content;
+	$self->log (4, "content $content");
+	#print "content $content";
+	return $content;
+    } else {
+	$self->log (3, "post_msg error ".$response->status_line);
+	#print "post_msg error ".$response->status_line;
+	return '';
+    }
+
 }
 
 =head1 AUTHORS
