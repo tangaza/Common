@@ -21,12 +21,10 @@
 
 package Nokia::Common::GatewayHttpSMSRelay;
 
-#use Exporter;
-#@ISA = ('Exporter');
-#@EXPORT = ('sms_relay');
 use strict;
 use HTTP::Request::Common;
 use LWP::Simple;
+use URI::Escape;
 
 =head1 NAME
 
@@ -69,17 +67,18 @@ sub sms_relay {
 
     if ($response eq '') {
 	# error condition
-	$self->agi->set_variable("SMSOUT", "");
-    } else {
-	my $smsOut = "$sender\n$response";
-
-	# Make it possible to send back to Asterisk
-	my $smsEncodedOut = uri_escape($smsOut);
-
-	# Assign it to a variable so it is available when we return from
-	# the AGI.
-	$self->agi->set_variable("SMSOUT", $smsEncodedOut);
+	$response = 'Sorry.  An error occurred.';
     }
+
+    my $smsOut = "$sender\n$response";
+
+    # Make it possible to send back to Asterisk
+    my $smsEncodedOut = uri_escape($smsOut);
+
+    # Assign it to a variable so it is available when we return from
+    # the AGI.
+    $self->agi->set_variable("SMSOUT", $smsEncodedOut);
+
 }
 
 ######################################################################
