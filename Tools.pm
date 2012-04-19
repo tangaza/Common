@@ -35,6 +35,7 @@ use Nokia::Common::Phone;
 use Math::Random qw(random_uniform_integer);
 use LWP;
 use URI;
+use URI::Escape;
 use LWP::UserAgent;
 use UNIVERSAL::require;
 
@@ -80,7 +81,7 @@ sub codec {
 # TODO would it be better to use 'sln'?
 # Can 'sln' files be played through a web browser easily?
 
-    return 'gsm';
+    return 'sln';
 }
 
 ######################################################################
@@ -976,7 +977,9 @@ sub record_file {
     my $SECONDS_OF_SILENCE = 3;
     my $tmp_record_file_no_codec = $tmp_rec_dir.$hash;
     my $tmp_record_file_w_codec = $tmp_rec_dir.$hash.'.'.&codec();
-    my $tmp_record_file_wav_codec = $tmp_rec_dir.$hash.'.wav';
+
+    #my $tmp_record_file_wav_codec = $tmp_rec_dir.$hash.'.wav';
+    my $tmp_record_file_sln_codec = $tmp_rec_dir.$hash.'.sln';
 
     my $res = '';
     my $silence_loop = 0;
@@ -987,7 +990,7 @@ sub record_file {
 
 	&unlink_file ($self, $tmp_record_file_w_codec);
 
-	$self->log (4, "about to record to $hash");
+	$self->log (4, "about to record to $tmp_record_file_w_codec");
 
 	# record the file in wav format
 	# but this is converted to gsm
@@ -995,16 +998,22 @@ sub record_file {
 	
 	if (defined($dtmf) && $dtmf >= 0 && chr($dtmf) ne '*') {
 
+	    # was 'wav' now 'sln'
 	    $dtmf = $self->agi->record_file
-		($tmp_record_file_no_codec, 'wav', '*#0123456789', 
+		($tmp_record_file_no_codec, 'sln', '*#0123456789', 
 		 $length_in_seconds*1000, '0', 0, $SECONDS_OF_SILENCE);
 
 	}
 
 	if (!defined($dtmf) || $dtmf < 0) {
 	    $res = 'hangup';
-	} elsif (chr($dtmf) eq '*' || !-e$tmp_record_file_wav_codec) {
+	    $self->log (4, "user hung up while recording file");
+	} elsif (chr($dtmf) eq '*') {
 	    $res = 'cancel';
+	    $self->log (4, "user hit cancel key");
+	} elsif (!-e $tmp_record_file_sln_codec) {
+	    $res = 'cancel';
+	    $self->log (4, "record file does not exist: $tmp_record_file_sln_codec");
 	}
 
 	if (defined($dtmf)) {
@@ -1015,7 +1024,8 @@ sub record_file {
 
 	my $rerecord = 0;
 
-	if ($res ne 'cancel' && $res ne 'timeout') {
+	# took out sox cleanup for now
+	if (0 && $res ne 'cancel' && $res ne 'timeout') {
 
 	    # Assumes SoX-14.1
 
@@ -1025,7 +1035,9 @@ sub record_file {
 	    my $max_amplitude = 0;
 	    my $record_length = 1;
 	    my $file_copy = $tmp_rec_dir.$hash.'-norm.wav';
-	    my $stat_cmd = "sox $tmp_record_file_wav_codec $file_copy stat 2>&1";
+	    #my $stat_cmd = "sox $tmp_record_file_wav_codec $file_copy stat 2>&1";
+	    # changed and not tested
+	    my $stat_cmd = "sox $tmp_record_file_sln_codec $file_copy stat 2>&1";
 	    open (STAT, "$stat_cmd |") or die ("Failed: $stat_cmd");
 	    while (my $line = <STAT>) {
 		#print "line $line\n";
@@ -1062,7 +1074,9 @@ sub record_file {
 		my $silence_time = '0:0:0.01';
 		my $silence_db = '-55d';
 
-		my $sox_cmd = "sox $tmp_record_file_wav_codec ".
+		#my $sox_cmd = "sox $tmp_record_file_wav_codec ".
+		# not tested
+		my $sox_cmd = "sox $tmp_record_file_sln_codec ".
 		    "$tmp_record_file_w_codec ".
 		    "vol $multiplicator ".
 		    "silence $record_length $silence_time $silence_db reverse ".
@@ -1076,7 +1090,8 @@ sub record_file {
 	    }
 
 	    unlink $file_copy;
-	    unlink $tmp_record_file_wav_codec;
+	    unlink $tmp_record_file_sln_codec;
+	    #unlink $tmp_record_file_wav_codec;
 
 
 	}
@@ -1303,7 +1318,7 @@ sub reap_old_self {
 sub place_call {
     my ($call_content) = @_;
 
-    print "START place_call\n\n";
+    #$self->log (4, "content $content");
 
     # TODO change the channel based on the country code
     # Keep in mind that, because we plan to deploy in multiple destinations,
@@ -1321,7 +1336,7 @@ sub place_call {
     my $mvcmd = "mv $callfile $calldir";
     system ($mvcmd) == 0 or die ("Failed $mvcmd", $?);
 
-    print "END place_call\n\n";
+    #$self->log (4, "finished");
 
 }
 
@@ -1566,7 +1581,7 @@ sub rnd_alphanum {
 	die ("huh");
     }
 
-    print STDERR "rnd alphanum ret $ret\n";
+    #print STDERR "rnd alphanum ret $ret\n";
     return $ret;
 }
 
@@ -1584,7 +1599,7 @@ sub user_has_hungup {
 	return 1;
     }
 
-    $self->log (4, "channel status ".$self->agi->channel_status(""));
+    $self->log (4, "channel status ".$self->agi->channel_status("")." (not hangup)");
 
     return 0;
 }
@@ -1988,11 +2003,12 @@ sub sms_enqueue {
     my $gateway_active = $prefs->{'voip-gsm-gateway'}->{active};
     if ($gateway_active eq 'true') {
 	my $sms_out = "$phone\n$msg";
-	# Set(MESSAGE(body)=${SMSOUTRAW})
-	# Note: unclear if this will work b/c of encoding problem
-	$self->agi->set_variable("MESSAGE(body)", $sms_out);
-	# MessageSend(sip:gsm1) 
-	$self->agi->exec('MessageSend', $prefs->{'voip-gsm-gateway'}->{'sip_user'});
+	my $encoded = uri_escape($sms_out);
+	my $content = 'Channel: Local/smssend_callfile@gateway/n'."\n";
+	$content .= "Setvar: SMSOUT=$encoded\n";
+	$content .= "Extension: smssend\n";
+	&place_call($content);
+
     } else {
 
 	my $socket = IO::Socket::INET->new(PeerAddr => '127.0.0.1',
