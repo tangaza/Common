@@ -1449,6 +1449,8 @@ sub dbi_connect {
     my ($self) = @_;
     $self->{app} = $self->get_property('app_name');
     
+    $self->log (4, "app_name ".$self->get_property('app_name').
+		" dsn ".$self->get_property('dsn'));
 
     my $schema_package = "Nokia::".$self->{app}."::Schema";
     
